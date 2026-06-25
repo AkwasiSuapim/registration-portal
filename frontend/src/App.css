@@ -1,0 +1,579 @@
+/* ======================
+   Layout
+   ====================== */
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: #f8fafc;
+}
+
+/* ======================
+   Shared Buttons
+   ====================== */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 11px 26px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.btn--primary {
+  background: #2563eb;
+  color: #fff;
+  border-color: #2563eb;
+}
+
+.btn--primary:hover {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+}
+
+.btn--outline {
+  background: #fff;
+  color: #2563eb;
+  border-color: #2563eb;
+}
+
+.btn--outline:hover {
+  background: #eff6ff;
+}
+
+/* ======================
+   Navbar
+   ====================== */
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 0 40px;
+  height: 64px;
+  background: #fff;
+  border-bottom: 1px solid #eef1f5;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  flex-shrink: 0;
+}
+
+.navbar__brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.navbar__brand-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: #1a5fa8;
+  border-radius: 8px;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.brand-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.navbar__brand-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.navbar__brand-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0d1117;
+  line-height: 1.2;
+}
+
+.navbar__brand-subtitle {
+  font-size: 11px;
+  color: #94a3b8;
+  line-height: 1.2;
+}
+
+.navbar__links {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.navbar__button {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 6px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #64748b;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+  line-height: 1.4;
+}
+
+.navbar__button:hover {
+  color: #1a5fa8;
+  background: #f0f7ff;
+}
+
+/* Active underline — only for Home and Admin Dashboard */
+.navbar__button--active:not(.navbar__button--register) {
+  color: #1a5fa8;
+  border-bottom: 2px solid #1a5fa8;
+  border-radius: 0;
+}
+
+/* Register is always a filled pill */
+.navbar__button--register {
+  background: #2563eb;
+  color: #fff;
+  border-radius: 20px;
+  border-bottom: 2px solid transparent;
+  padding: 6px 18px;
+}
+
+.navbar__button--register:hover,
+.navbar__button--register.navbar__button--active {
+  background: #1d4ed8;
+  color: #fff;
+}
+
+.navbar__portal-link {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: none;
+  border: none;
+  padding: 6px 12px;
+  font-size: 14px;
+  color: #64748b;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
+  flex-shrink: 0;
+}
+
+.navbar__portal-link:hover {
+  color: #1a5fa8;
+  background: #f0f7ff;
+}
+
+.user-icon {
+  width: 18px;
+  height: 18px;
+}
+
+/* ======================
+   Home Page
+   ====================== */
+.home {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Hero — white section that lifts off the #f8fafc page */
+.hero {
+  display: flex;
+  align-items: center;
+  gap: 56px;
+  padding: 72px 48px;
+  background: #fff;
+  border-bottom: 1px solid #eef1f5;
+}
+
+.hero__content {
+  flex: 1;
+  max-width: 540px;
+}
+
+.hero__headline {
+  font-size: 44px;
+  font-weight: 700;
+  line-height: 1.15;
+  color: #0d1117;
+  margin: 0 0 18px;
+  letter-spacing: -0.5px;
+}
+
+.hero__headline--accent {
+  color: #2563eb;
+}
+
+.hero__description {
+  font-size: 16px;
+  color: #64748b;
+  line-height: 1.75;
+  margin: 0 0 32px;
+}
+
+.hero__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Portal Preview Card */
+.portal-preview {
+  flex-shrink: 0;
+  width: 310px;
+  background: #fff;
+  border: 1px solid #eef1f5;
+  border-radius: 14px;
+  padding: 22px 24px 18px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+.portal-preview__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.portal-preview__title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0d1117;
+  margin: 0;
+  letter-spacing: 0;
+}
+
+.portal-preview__badge {
+  font-size: 11px;
+  font-weight: 600;
+  color: #16a34a;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  padding: 2px 9px;
+  border-radius: 20px;
+}
+
+.portal-preview__steps {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.preview-step {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.preview-step__row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.preview-step__info {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  min-width: 0;
+}
+
+.preview-step__title {
+  font-size: 13px;
+  font-weight: 500;
+  color: #1e293b;
+  white-space: nowrap;
+}
+
+/* Step circle indicator */
+.step-indicator {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.step-indicator--completed {
+  background: #2563eb;
+}
+
+.step-indicator--completed svg {
+  width: 16px;
+  height: 16px;
+}
+
+.step-indicator--in-progress {
+  border: 2px solid #2563eb;
+  color: #2563eb;
+}
+
+.step-indicator--pending {
+  border: 2px solid #e2e8f0;
+  color: #cbd5e1;
+}
+
+/* Step status text */
+.preview-step__status {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+
+.preview-step__status--completed   { color: #16a34a; }
+.preview-step__status--in-progress { color: #2563eb; }
+.preview-step__status--pending     { color: #cbd5e1; }
+
+/* Step progress bar */
+.step-progress {
+  height: 4px;
+  background: #f1f5f9;
+  border-radius: 2px;
+  margin-left: 40px;
+}
+
+.step-progress__fill {
+  height: 100%;
+  border-radius: 2px;
+  background: #2563eb;
+  transition: width 0.3s ease;
+}
+
+.step-progress__fill--completed   { width: 100%; }
+.step-progress__fill--in-progress { width: 55%;  }
+.step-progress__fill--pending     { width: 0%;   }
+
+.portal-preview__queue {
+  font-size: 12px;
+  color: #94a3b8;
+  text-align: center;
+  margin: 16px 0 0;
+  padding-top: 14px;
+  border-top: 1px solid #f1f5f9;
+}
+
+/* ======================
+   Stats Section
+   ====================== */
+
+/* Stats sit on the #f8fafc page background — each card is white */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  padding: 40px 48px;
+  background: #f8fafc;
+}
+
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 32px 20px;
+  background: #fff;
+  border: 1px solid #eef1f5;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.stat-card__icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #eff6ff;
+  border-radius: 10px;
+  color: #2563eb;
+  margin-bottom: 4px;
+}
+
+.stat-card__icon svg {
+  width: 26px;
+  height: 26px;
+}
+
+.stat-card__headline {
+  font-size: 22px;
+  font-weight: 700;
+  color: #0d1117;
+  line-height: 1;
+}
+
+.stat-card__label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #94a3b8;
+  letter-spacing: 0.5px;
+  text-align: center;
+}
+
+/* ======================
+   Placeholder Pages
+   ====================== */
+.placeholder-page {
+  max-width: 640px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 64px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  text-align: left;
+}
+
+.placeholder-page__header {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.placeholder-page__title {
+  font-size: 32px;
+  font-weight: 700;
+  color: #0d1117;
+  margin: 0;
+  letter-spacing: -0.3px;
+}
+
+.placeholder-page__desc {
+  font-size: 16px;
+  color: #64748b;
+  line-height: 1.7;
+  margin: 0;
+}
+
+/* Card is white — stands out against the #f8fafc page */
+.placeholder-card {
+  background: #fff;
+  border: 1px solid #eef1f5;
+  border-radius: 12px;
+  padding: 24px 28px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.placeholder-card__heading {
+  font-size: 15px;
+  font-weight: 600;
+  color: #0d1117;
+  margin: 0;
+  letter-spacing: 0;
+}
+
+.placeholder-card__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* List items use #f8fafc — nested inside the white card */
+.placeholder-card__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: #374151;
+  padding: 10px 14px;
+  background: #f8fafc;
+  border: 1px solid #eef1f5;
+  border-radius: 8px;
+}
+
+.placeholder-card__item::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #2563eb;
+  flex-shrink: 0;
+}
+
+.placeholder-card__text {
+  font-size: 14px;
+  color: #64748b;
+  line-height: 1.65;
+  margin: 0;
+}
+
+/* ======================
+   Responsive
+   ====================== */
+@media (max-width: 1024px) {
+  .navbar {
+    padding: 0 20px;
+  }
+
+  .navbar__brand-subtitle {
+    display: none;
+  }
+
+  .hero {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 48px 24px;
+    gap: 36px;
+  }
+
+  .hero__content {
+    max-width: 100%;
+  }
+
+  .hero__headline {
+    font-size: 34px;
+  }
+
+  .portal-preview {
+    width: 100%;
+    max-width: 420px;
+  }
+
+  .stats {
+    grid-template-columns: repeat(2, 1fr);
+    padding: 32px 24px;
+  }
+}
+
+@media (max-width: 600px) {
+  .hero__actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .hero__actions .btn {
+    width: 100%;
+  }
+
+  .placeholder-page {
+    padding: 40px 20px;
+  }
+
+  .stats {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    padding: 24px 16px;
+  }
+}
