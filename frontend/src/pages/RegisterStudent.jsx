@@ -1,39 +1,27 @@
-const formSections = [
-  'Personal Info',
-  'Contact Info',
-  'Academic Info',
-  'Documents',
-]
+import StudentForm from '../components/StudentForm'
 
 function RegisterStudent({ onNavigate }) {
   return (
-    <div className="placeholder-page">
-      <div className="placeholder-page__header">
-        <h1 className="placeholder-page__title">Student Registration</h1>
-        <p className="placeholder-page__desc">
-          The full registration form is coming next. Students will be able to
-          complete their registration entirely online — no in-person queuing required.
-        </p>
-      </div>
+    <div className="registration-page">
+      <header className="registration-page__header">
+        <button
+          type="button"
+          className="registration-page__back"
+          onClick={() => onNavigate('home')}
+        >
+          Back to Home
+        </button>
+        <div>
+          <p className="registration-page__eyebrow">Registrar intake form</p>
+          <h1 className="registration-page__title">Student Registration</h1>
+          <p className="registration-page__desc">
+            Complete your student details, preview a course load, and prepare your
+            record for registrar review.
+          </p>
+        </div>
+      </header>
 
-      <div className="placeholder-card">
-        <h2 className="placeholder-card__heading">Form sections coming next:</h2>
-        <ul className="placeholder-card__list">
-          {formSections.map((section) => (
-            <li key={section} className="placeholder-card__item">
-              {section}
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      <button
-        type="button"
-        className="btn btn--outline"
-        onClick={() => onNavigate('home')}
-      >
-        ← Back to Home
-      </button>
+      <StudentForm />
     </div>
   )
 }

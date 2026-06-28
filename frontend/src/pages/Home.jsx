@@ -30,6 +30,43 @@ const STATUS_LABELS = {
   'pending':     'PENDING',
 }
 
+const BENEFIT_ICON_PATHS = {
+  speed:
+    'M7 2v11h3v9l7-12h-4l4-8z',
+  digital:
+    'M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z',
+  review:
+    'M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z',
+}
+
+const benefitCards = [
+  {
+    iconKey:     'speed',
+    title:       'Faster Registration',
+    description: 'Students can complete registration online without waiting in long physical lines. Save time and avoid the stress of manual paperwork.',
+    linkText:    'Learn More →',
+  },
+  {
+    iconKey:     'digital',
+    title:       'Digital Submission',
+    description: 'Student information and required documents can be submitted securely through the portal. Organized validation helps reduce missing information.',
+    linkText:    'Learn More →',
+  },
+  {
+    iconKey:     'review',
+    title:       'Registrar Review',
+    description: 'Administrators can review, approve, reject, or request corrections digitally, creating a transparent and accountable review process.',
+    linkText:    'Learn More →',
+  },
+]
+
+const footerLinks = [
+  { label: 'Privacy Policy',   href: '#' },
+  { label: 'Terms of Service', href: '#' },
+  { label: 'Help Center',      href: '#' },
+  { label: 'Contact Support',  href: '#' },
+]
+
 function StepIndicator({ number, status }) {
   if (status === 'completed') {
     return (
@@ -121,6 +158,51 @@ function Home({ onNavigate }) {
           </div>
         ))}
       </section>
+
+      {/* Benefit Cards */}
+      <section className="benefits">
+        <div className="benefits__grid">
+          {benefitCards.map(({ iconKey, title, description, linkText }) => (
+            <div key={title} className="benefit-card">
+              <div className="benefit-card__icon">
+                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d={BENEFIT_ICON_PATHS[iconKey]} />
+                </svg>
+              </div>
+              <h3 className="benefit-card__title">{title}</h3>
+              <p className="benefit-card__desc">{description}</p>
+              <a href="#" className="benefit-card__link">{linkText}</a>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Campus Image Banner */}
+      <section className="campus-banner">
+        <div className="campus-banner__overlay">
+          <div className="campus-banner__content">
+            <h2 className="campus-banner__heading">Dedicated to Academic Excellence</h2>
+            <p className="campus-banner__text">
+              Join the students moving their academic registration experience into a secure digital workflow.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="site-footer">
+        <div className="footer__brand">
+          <span className="footer__name">Livingstone College</span>
+          <span className="footer__copy">© 2026 Livingstone College Student Registration Portal</span>
+        </div>
+        <nav className="footer__links" aria-label="Footer navigation">
+          {footerLinks.map(({ label, href }) => (
+            <a key={label} href={href} className="footer-link">
+              {label}
+            </a>
+          ))}
+        </nav>
+      </footer>
     </div>
   )
 }
