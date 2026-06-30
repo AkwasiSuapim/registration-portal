@@ -1,7 +1,10 @@
+// Nav items that always appear in the centre of the navbar.
+// The Register item gets a blue pill style via navbar__button--register.
 const navItems = [
-  { page: 'home',     label: 'Home'           },
-  { page: 'register', label: 'Register'        },
-  { page: 'admin',    label: 'Admin Dashboard' },
+  { page: 'home',           label: 'Home'            },
+  { page: 'register',       label: 'Register'        },
+  { page: 'student-portal', label: 'Student Portal'  },
+  { page: 'admin',          label: 'Admin Dashboard' },
 ]
 
 function GraduationCapIcon() {
@@ -12,17 +15,19 @@ function GraduationCapIcon() {
   )
 }
 
-function UserIcon() {
-  return (
-    <svg className="user-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
-    </svg>
-  )
-}
+function Navbar({ currentPage, onNavigate, currentSession, onLogout }) {
+  // Build a human-readable label for the session indicator in the navbar.
+  // Students show as "Student", officials show their office role name.
+  const sessionLabel = currentSession
+    ? currentSession.userType === 'student'
+      ? 'Student'
+      : currentSession.officeRole
+    : null
 
-function Navbar({ currentPage, onNavigate }) {
   return (
     <nav className="navbar">
+
+      {/* Brand */}
       <div className="navbar__brand">
         <div className="navbar__brand-icon">
           <GraduationCapIcon />
@@ -33,12 +38,13 @@ function Navbar({ currentPage, onNavigate }) {
         </div>
       </div>
 
+      {/* Centre navigation links */}
       <div className="navbar__links">
         {navItems.map(({ page, label }) => {
           const classes = [
             'navbar__button',
-            page === 'register'    && 'navbar__button--register',
-            currentPage === page   && 'navbar__button--active',
+            page === 'register' && 'navbar__button--register',
+            currentPage === page && 'navbar__button--active',
           ].filter(Boolean).join(' ')
 
           return (
@@ -54,14 +60,32 @@ function Navbar({ currentPage, onNavigate }) {
         })}
       </div>
 
-      <button
-        type="button"
-        className="navbar__portal-link"
-        onClick={() => onNavigate('home')}
-      >
-        <UserIcon />
-        <span>Student Portal</span>
-      </button>
+      {/* Right side — shows Login when no session, or session info + Logout */}
+      <div className="navbar__session-area">
+        {currentSession ? (
+          <>
+            <span className="navbar__session-label">
+              Logged in as: <strong>{sessionLabel}</strong>
+            </span>
+            <button
+              type="button"
+              className="navbar__logout-btn"
+              onClick={onLogout}
+            >
+              Logout
+            </button>
+          </>
+        ) : (
+          <button
+            type="button"
+            className={`navbar__login-btn${currentPage === 'login' ? ' navbar__login-btn--active' : ''}`}
+            onClick={() => onNavigate('login')}
+          >
+            Login
+          </button>
+        )}
+      </div>
+
     </nav>
   )
 }
