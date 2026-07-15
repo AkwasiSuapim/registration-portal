@@ -84,6 +84,42 @@ python -m app.scripts.seed_data
 
 ---
 
+## Quality checks
+
+Run these before completing any backend phase.
+
+**Check for syntax and import errors:**
+
+```bash
+python -m compileall app
+```
+
+**Run the test suite:**
+
+```bash
+pytest -q
+```
+
+**Run both together (recommended before every phase handoff):**
+
+```bash
+python -m compileall app && pytest -q
+```
+
+**If database models or migrations changed, also run:**
+
+```bash
+alembic upgrade head
+```
+
+**Run tests with coverage report:**
+
+```bash
+pytest --cov=app --cov-report=term-missing -q
+```
+
+---
+
 ## Project structure
 
 ```

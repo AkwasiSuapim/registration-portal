@@ -9,3 +9,6 @@ python-jose
 passlib[bcrypt]
 python-multipart
 email-validator
+pytest
+httpx2
+pytest-cov

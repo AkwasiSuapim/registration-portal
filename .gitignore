@@ -1,0 +1,32 @@
+
+# Local environment variables / secrets
+.env
+backend/.env
+
+# Python virtual environments
+venv/
+backend/venv/
+
+# Uploaded files
+uploads/
+backend/uploads/
+
+# Python generated files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Test/cache output
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Frontend generated files
+frontend/node_modules/
+frontend/dist/
+
+# Mac/editor files
+.DS_Store
+.vscode/
+.idea/
