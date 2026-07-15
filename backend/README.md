@@ -119,6 +119,62 @@ password:  Password123!
 
 ---
 
+## Application API (Phase 5)
+
+All application endpoints require a `Bearer` token from `POST /auth/login`.
+
+**Submit a new registration application:**
+
+```bash
+curl -X POST http://localhost:8000/applications \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer TOKEN" \
+  -d '{
+    "term_code": "Fall 2026",
+    "academic_year": "2026-2027",
+    "major": "Mathematics",
+    "classification": "Freshman",
+    "housing_required": true,
+    "courses": [
+      {"course_code": "MAT 231", "course_title": "Calculus I",               "section": "01", "credit_hours": 4},
+      {"course_code": "CIS 201", "course_title": "Introduction to Programming","section": "01", "credit_hours": 3},
+      {"course_code": "ENG 131", "course_title": "College Writing",           "section": "02", "credit_hours": 3},
+      {"course_code": "HIS 232", "course_title": "African American History II","section": "01", "credit_hours": 3},
+      {"course_code": "BIO 101", "course_title": "General Biology",           "section": "01", "credit_hours": 4}
+    ]
+  }'
+```
+
+**Get all applications for the current student:**
+
+```bash
+curl http://localhost:8000/students/me/applications \
+  -H "Authorization: Bearer TOKEN"
+```
+
+**Get one application by ID:**
+
+```bash
+curl http://localhost:8000/applications/{application_id} \
+  -H "Authorization: Bearer TOKEN"
+```
+
+**Get clearance workflow status:**
+
+```bash
+curl http://localhost:8000/applications/{application_id}/status \
+  -H "Authorization: Bearer TOKEN"
+```
+
+Business rules enforced by the backend:
+- Minimum 15 credit hours required (returns 422 with a clear message if not met)
+- One application per student per term (returns 409 on duplicate)
+- Students can only see their own applications (returns 404 for any other application)
+- 7 clearances created automatically on submission
+- Registrar Check-In starts as `ready`; all others start `locked` (or `not_required` for Residence Life on commuter students)
+
+---
+
 ## Auth API examples
 
 **Login as a student (student ID):**

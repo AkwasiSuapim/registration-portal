@@ -61,6 +61,16 @@ CLEARANCE_TEMPLATES = [
     },
 ]
 
+# Specific reason shown to the student for each locked clearance.
+# Having clear, readable messages here helps students understand where they are in the process.
+_INITIAL_BLOCKED_REASONS: dict[str, str] = {
+    "health_services": "Waiting for Registrar Check-In approval.",
+    "success_center":  "Waiting for Registrar Check-In approval.",
+    "financial_aid":   "Waiting for Registrar Check-In approval.",
+    "business_office": "Waiting for Financial Aid approval.",
+    "residence_life":  "Waiting for Business Office approval.",
+}
+
 # Maps each office role to the single clearance it is responsible for.
 # Officials cannot update any clearance except the one listed here.
 # student and system_admin intentionally have no entry.
@@ -73,6 +83,51 @@ _ROLE_TO_CLEARANCE: dict[str, str] = {
     "residence_life":  "residence_life",
     "public_safety":   "public_safety",
 }
+
+
+def get_initial_blocked_reason(clearance_key: str, housing_required: bool) -> str:
+    """
+    Returns the human-readable blocked reason shown when a clearance is first created.
+
+    Public Safety has two possible reasons depending on whether the student lives on campus.
+    """
+    if clearance_key == "public_safety":
+        if housing_required:
+            return "Waiting for Residence Life approval."
+        return "Waiting for Business Office approval."
+    return _INITIAL_BLOCKED_REASONS.get(clearance_key, "Waiting for prerequisite clearance.")
+
+
+def get_initial_clearance_state(clearance_key: str, housing_required: bool) -> dict:
+    """
+    Returns the initial status, availability, is_required, and blocked_reason for
+    a clearance when a brand-new application is created.
+
+    This is the single source of truth for the workflow starting state.
+    Call it instead of hard-coding clearance states in multiple places.
+    """
+    if clearance_key == "registrar_check_in":
+        return {
+            "status": "pending",
+            "availability": "ready",
+            "is_required": True,
+            "blocked_reason": None,
+        }
+
+    if clearance_key == "residence_life" and not housing_required:
+        return {
+            "status": "not_required",
+            "availability": "completed",
+            "is_required": False,
+            "blocked_reason": "Residence Life is not required for commuter students.",
+        }
+
+    return {
+        "status": "pending",
+        "availability": "locked",
+        "is_required": True,
+        "blocked_reason": get_initial_blocked_reason(clearance_key, housing_required),
+    }
 
 
 def get_allowed_clearance_for_role(role_key: str) -> str | None:
@@ -115,43 +170,21 @@ def create_default_clearances_for_application(db: Session, application) -> list[
                 "Run: python -m app.scripts.seed_data"
             )
 
+        state = get_initial_clearance_state(
+            template["clearance_key"], application.housing_required
+        )
         is_registrar = template["clearance_key"] == "registrar_check_in"
-        is_residence_life = template["clearance_key"] == "residence_life"
-        is_commuter = not application.housing_required
-
-        if is_residence_life and is_commuter:
-            # Commuter students skip housing clearance entirely.
-            status = "not_required"
-            availability = "completed"
-            is_required = False
-            blocked_reason = "Not required: student is not living in campus housing."
-            opened_at = None
-
-        elif is_registrar:
-            # Registrar opens immediately; no prerequisites.
-            status = "pending"
-            availability = "ready"
-            is_required = True
-            blocked_reason = None
-            opened_at = now
-
-        else:
-            # Everything else starts locked until prerequisites are approved.
-            status = "pending"
-            availability = "locked"
-            is_required = True
-            blocked_reason = "Waiting for prerequisite clearance to be approved."
-            opened_at = None
+        opened_at = now if is_registrar else None
 
         clearance = Clearance(
             application_id=application.id,
             clearance_key=template["clearance_key"],
             clearance_label=template["clearance_label"],
             office_role_id=role.id,
-            status=status,
-            availability=availability,
-            is_required=is_required,
-            blocked_reason=blocked_reason,
+            status=state["status"],
+            availability=state["availability"],
+            is_required=state["is_required"],
+            blocked_reason=state["blocked_reason"],
             opened_at=opened_at,
         )
         db.add(clearance)
