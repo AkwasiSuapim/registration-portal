@@ -119,6 +119,86 @@ password:  Password123!
 
 ---
 
+## Clearance workflow API (Phase 6)
+
+All clearance endpoints require a `Bearer` token from `POST /auth/login`.
+
+**Official queue — see all clearances assigned to your office:**
+
+```bash
+curl http://localhost:8000/officials/me/queue \
+  -H "Authorization: Bearer OFFICIAL_TOKEN"
+
+# Filter to only applications ready for your review:
+curl "http://localhost:8000/officials/me/queue?availability=ready" \
+  -H "Authorization: Bearer OFFICIAL_TOKEN"
+```
+
+**Review a full application (officials and admins only):**
+
+```bash
+curl http://localhost:8000/applications/{application_id}/review \
+  -H "Authorization: Bearer OFFICIAL_TOKEN"
+```
+
+**Approve a clearance:**
+
+```bash
+curl -X PATCH http://localhost:8000/clearances/{clearance_id} \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer OFFICIAL_TOKEN" \
+  -d '{"action": "approve"}'
+```
+
+**Request a correction (message required):**
+
+```bash
+curl -X PATCH http://localhost:8000/clearances/{clearance_id} \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer OFFICIAL_TOKEN" \
+  -d '{"action": "request_correction", "message": "Please provide updated immunization records."}'
+```
+
+**Reject a clearance (message required):**
+
+```bash
+curl -X PATCH http://localhost:8000/clearances/{clearance_id} \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer OFFICIAL_TOKEN" \
+  -d '{"action": "reject", "message": "Outstanding balance must be settled first."}'
+```
+
+**Mark in-person visit required (Public Safety only):**
+
+```bash
+curl -X PATCH http://localhost:8000/clearances/{clearance_id} \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer PUBLIC_SAFETY_TOKEN" \
+  -d '{"action": "mark_in_person_required"}'
+```
+
+Business rules enforced by the backend:
+- Only the office responsible for a clearance can update it (returns 403 otherwise).
+- A clearance must be `ready` or `needs_student_action` before it can be updated (returns 409 if locked or already finalized).
+- `request_correction` and `reject` require a non-empty `message` field (returns 422 if omitted).
+- Only Public Safety can use `mark_in_person_required` (returns 403 for other offices).
+- Approving a clearance automatically unlocks all downstream clearances whose prerequisites are now met.
+- After every clearance update the application's `overall_status` and `current_step` are recalculated.
+- Student and office notifications are created automatically on every clearance update.
+
+Residential workflow dependency order:
+```
+registrar_check_in → health_services  (parallel)
+                   → success_center   (parallel)
+                   → financial_aid    (parallel)
+financial_aid      → business_office
+business_office    → residence_life   (residential students only)
+residence_life     → public_safety    (residential)
+business_office    → public_safety    (commuter — skips residence_life)
+```
+
+---
+
 ## Application API (Phase 5)
 
 All application endpoints require a `Bearer` token from `POST /auth/login`.

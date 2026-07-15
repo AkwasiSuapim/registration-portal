@@ -1,9 +1,10 @@
 """
 Application routes — student registration application submission and retrieval.
 
-POST /applications           Submit a new application (students only)
-GET  /applications/{id}      Get one application by ID
-GET  /applications/{id}/status  Get the clearance status summary
+POST /applications                Submit a new application (students only)
+GET  /applications/{id}           Get one application by ID
+GET  /applications/{id}/status    Get the clearance workflow status summary
+GET  /applications/{id}/review    Full application view for officials and admins
 """
 
 import uuid
@@ -16,7 +17,8 @@ from app.database import get_db
 from app.models.user import User
 from app.schemas.application import ApplicationCreate, ApplicationResponse, ApplicationStatusResponse
 from app.schemas.clearance import ClearanceResponse
-from app.services import application_service
+from app.schemas.official import ApplicationReviewResponse
+from app.services import application_service, clearance_service
 
 router = APIRouter(tags=["Applications"])
 
@@ -83,3 +85,21 @@ def get_application_status(
         current_step=application.current_step,
         clearances=[ClearanceResponse.model_validate(c) for c in application.clearances],
     )
+
+
+@router.get(
+    "/applications/{application_id}/review",
+    response_model=ApplicationReviewResponse,
+)
+def review_application(
+    application_id: uuid.UUID,
+    current_user: User = Depends(deps.require_official_or_admin),
+    db: Session = Depends(get_db),
+):
+    """
+    Returns a full application view for officials and admins to review.
+
+    Includes student profile, courses, and all clearance statuses.
+    Students cannot access this endpoint.
+    """
+    return clearance_service.get_application_for_official_review(db, application_id)

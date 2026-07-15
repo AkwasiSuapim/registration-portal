@@ -98,6 +98,13 @@ def require_admin(current_user: User = Depends(get_current_user)) -> User:
     return current_user
 
 
+def require_official_or_admin(current_user: User = Depends(get_current_user)) -> User:
+    """Allows officials and admins but not students. Raises 403 for students."""
+    if current_user.account_type == "student":
+        raise _NOT_AUTHORIZED
+    return current_user
+
+
 def require_role(role_key: str):
     """
     Returns a dependency that allows only users with the given role_key.

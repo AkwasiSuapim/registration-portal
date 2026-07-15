@@ -130,6 +130,58 @@ def get_initial_clearance_state(clearance_key: str, housing_required: bool) -> d
     }
 
 
+# Inverse of _ROLE_TO_CLEARANCE — maps each clearance_key back to the role that owns it.
+_CLEARANCE_TO_ROLE: dict[str, str] = {v: k for k, v in _ROLE_TO_CLEARANCE.items()}
+
+# Priority order used to pick current_step when multiple clearances are ready simultaneously.
+_STEP_PRIORITY: list[str] = [
+    "registrar_check_in",
+    "health_services",
+    "success_center",
+    "financial_aid",
+    "business_office",
+    "residence_life",
+    "public_safety",
+]
+
+
+def get_role_key_for_clearance(clearance_key: str) -> str | None:
+    """Returns the role_key of the office responsible for a given clearance_key."""
+    return _CLEARANCE_TO_ROLE.get(clearance_key)
+
+
+def get_next_current_step(clearances: list) -> str | None:
+    """
+    Derives the application's current_step from the state of its clearances.
+
+    Returns the first ready clearance in workflow priority order.
+    Falls back to correction_required, in_person_required, or rejected if nothing is ready.
+    Returns None when all required clearances are finalized.
+    """
+    by_key = {c.clearance_key: c for c in clearances}
+
+    for key in _STEP_PRIORITY:
+        c = by_key.get(key)
+        if c and c.availability == "ready":
+            return key
+
+    for key in _STEP_PRIORITY:
+        c = by_key.get(key)
+        if c and c.status == "correction_required":
+            return c.clearance_key
+
+    for c in clearances:
+        if c.status == "in_person_required":
+            return "public_safety"
+
+    for c in clearances:
+        if c.status == "rejected":
+            return c.clearance_key
+
+    # All required clearances are finalized — use a sentinel so the NOT NULL column stays valid.
+    return "fully_registered"
+
+
 def get_allowed_clearance_for_role(role_key: str) -> str | None:
     """
     Returns the clearance_key that a role is allowed to update.
