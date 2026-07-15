@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import {
   CLEARANCE_KEYS,
-  OFFICE_ROLES,
   getClearanceLabel,
   getAllowedClearanceKey,
   calculateOverallStatus,
@@ -52,42 +51,10 @@ function StatusBadge({ status }) {
 }
 
 /* -------------------------------------------------------
-   RoleSelector — shown when no office session is active.
-   Clicking a role stores it in localStorage and updates state.
+   RoleBanner — shows the active office role at the top.
+   Logout is handled by the Navbar; no secondary logout here.
 ------------------------------------------------------- */
-function RoleSelector({ onSelect }) {
-  return (
-    <div className="role-selector">
-      <div className="role-selector__header">
-        <h2 className="role-selector__title">Select Your Office Role</h2>
-        <p className="role-selector__desc">
-          Choose your office to begin reviewing student applications.
-          Each office can only update its own assigned clearance section.
-        </p>
-      </div>
-      <div className="role-selector__grid">
-        {OFFICE_ROLES.map((role) => (
-          <button
-            key={role}
-            type="button"
-            className="role-card"
-            onClick={() => onSelect(role)}
-          >
-            <span className="role-card__name">{role}</span>
-            <span className="role-card__clearance">
-              {getClearanceLabel(getAllowedClearanceKey(role))}
-            </span>
-          </button>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-/* -------------------------------------------------------
-   RoleBanner — shown at the top when a session is active
-------------------------------------------------------- */
-function RoleBanner({ officeRole, onLogout }) {
+function RoleBanner({ officeRole }) {
   const clearanceLabel = getClearanceLabel(getAllowedClearanceKey(officeRole))
   return (
     <div className="role-banner">
@@ -98,13 +65,6 @@ function RoleBanner({ officeRole, onLogout }) {
           Managing: <strong>{clearanceLabel}</strong>
         </span>
       </div>
-      <button
-        type="button"
-        className="btn btn--outline role-banner__logout"
-        onClick={onLogout}
-      >
-        Switch Role
-      </button>
     </div>
   )
 }
@@ -161,11 +121,23 @@ function ClearanceSection({ clearanceKey, clearance, isAssigned, reviewMessage, 
       {/* Action area — only shown for the assigned clearance */}
       {canAct && (
         <div className="clearance-section__actions">
-          {/* Registrar gets a soft reminder when other clearances are still pending */}
-          {clearanceKey === 'registrar' && status === 'Pending' && (
-            <p className="clearance-section__registrar-note">
-              Note: Registrar final review should usually happen after all
-              office clearances are approved.
+
+          {/* Contextual note for offices with specific instructions */}
+          {clearanceKey === 'registrarCheckIn' && (
+            <p className="clearance-section__office-note">
+              The Welcome Desk / Registrar clearance confirms the student is
+              recognized and ready to begin registration validation.
+            </p>
+          )}
+          {clearanceKey === 'successCenter' && (
+            <p className="clearance-section__office-note">
+              Success Center clearance confirms course registration and minimum
+              15-credit-hour requirement.
+            </p>
+          )}
+          {clearanceKey === 'publicSafety' && (
+            <p className="clearance-section__office-note">
+              This step may require an in-person visit for student photo ID processing.
             </p>
           )}
 
@@ -202,6 +174,17 @@ function ClearanceSection({ clearanceKey, clearance, isAssigned, reviewMessage, 
             >
               Reject
             </button>
+            {/* Public Safety can also flag that an in-person visit is needed */}
+            {clearanceKey === 'publicSafety' && (
+              <button
+                type="button"
+                className="status-action-btn status-action-btn--in-person-required"
+                disabled={status === 'In-Person Required'}
+                onClick={() => onAction(clearanceKey, 'In-Person Required')}
+              >
+                Mark In-Person Required
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -400,19 +383,6 @@ function AdminDashboard({ onNavigate }) {
     if (session?.role) setOfficeRole(session.role)
   }, [])
 
-  /* ── Session management ── */
-
-  const handleSelectRole = (role) => {
-    localStorage.setItem('portalUserSession', JSON.stringify({ role }))
-    setOfficeRole(role)
-  }
-
-  const handleLogout = () => {
-    localStorage.removeItem('portalUserSession')
-    setOfficeRole(null)
-    setSelectedApplication(null)
-  }
-
   /* ── Application selection ── */
 
   const handleViewDetails = (application) => {
@@ -466,29 +436,13 @@ function AdminDashboard({ onNavigate }) {
   const correctionCount = applications.filter((a) => a.overallStatus === 'Correction Required').length
   const registeredCount = applications.filter((a) => a.overallStatus === 'Fully Registered').length
   const rejectedCount   = applications.filter((a) => a.overallStatus === 'Rejected').length
+  const inPersonCount   = applications.filter((a) => a.overallStatus === 'In-Person Required').length
 
   /* ── Render ── */
 
-  // If no role is selected, show the role selector screen
-  if (!officeRole) {
-    return (
-      <div className="admin-dashboard">
-        <div className="admin-header">
-          <div>
-            <p className="admin-header__eyebrow">Registrar Workflow</p>
-            <h1 className="admin-header__title">Admin Dashboard</h1>
-            <p className="admin-header__desc">
-              Select your office role to begin reviewing student applications.
-            </p>
-          </div>
-          <button type="button" className="btn btn--outline" onClick={() => onNavigate('home')}>
-            ← Back to Home
-          </button>
-        </div>
-        <RoleSelector onSelect={handleSelectRole} />
-      </div>
-    )
-  }
+  // Brief loading state while the useEffect reads the session.
+  // App.jsx already guards this route — if we reach here, an official session exists.
+  if (!officeRole) return null
 
   return (
     <div className="admin-dashboard">
@@ -508,15 +462,16 @@ function AdminDashboard({ onNavigate }) {
       </div>
 
       {/* Role banner — shows which office is currently logged in */}
-      <RoleBanner officeRole={officeRole} onLogout={handleLogout} />
+      <RoleBanner officeRole={officeRole} />
 
       {/* Summary cards */}
       <div className="summary-cards">
-        <SummaryCard label="Total"              count={totalCount}      variant="total"      />
-        <SummaryCard label="In Progress"        count={inProgressCount} variant="in-progress"/>
-        <SummaryCard label="Correction Required" count={correctionCount} variant="correction" />
-        <SummaryCard label="Fully Registered"   count={registeredCount} variant="registered" />
-        <SummaryCard label="Rejected"           count={rejectedCount}   variant="rejected"   />
+        <SummaryCard label="Total"              count={totalCount}      variant="total"       />
+        <SummaryCard label="In Progress"        count={inProgressCount} variant="in-progress" />
+        <SummaryCard label="Correction Required" count={correctionCount} variant="correction"  />
+        <SummaryCard label="Fully Registered"   count={registeredCount} variant="registered"  />
+        <SummaryCard label="Rejected"           count={rejectedCount}   variant="rejected"    />
+        <SummaryCard label="In-Person Required" count={inPersonCount}   variant="in-person"   />
       </div>
 
       {/* Application detail panel — shown when a row is selected */}
@@ -556,11 +511,11 @@ function AdminDashboard({ onNavigate }) {
                   <th>App ID</th>
                   <th>Student Name</th>
                   <th>Student ID</th>
-                  <th>Classification</th>
-                  <th>Term</th>
                   <th>Major</th>
-                  <th>Credits</th>
+                  <th>Enrollment Term</th>
+                  <th>Total Credits</th>
                   <th>Overall Status</th>
+                  <th>Submitted At</th>
                   <th>Action</th>
                 </tr>
               </thead>
@@ -575,11 +530,11 @@ function AdminDashboard({ onNavigate }) {
                       <td className="table-app-id">{formatApplicationId(app.submittedAt)}</td>
                       <td>{app.fullName || '—'}</td>
                       <td>{app.studentId || '—'}</td>
-                      <td>{app.classification || '—'}</td>
-                      <td>{app.registrationTerm || '—'}</td>
                       <td>{app.major || '—'}</td>
+                      <td>{app.registrationTerm || '—'}</td>
                       <td className="table-credits">{app.totalCreditHours ?? '—'}</td>
                       <td><StatusBadge status={app.overallStatus} /></td>
+                      <td className="table-submitted-at">{formatDate(app.submittedAt)}</td>
                       <td>
                         <button
                           type="button"

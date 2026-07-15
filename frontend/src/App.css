@@ -2030,7 +2030,7 @@
 
 .summary-cards {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   gap: 12px;
 }
 
@@ -2764,5 +2764,187 @@
 
   .navbar__session-label {
     display: none;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   PHASE 6 — New styles for In-Person Required, portal
+   courses/docs sections, and office note variants.
+   Added to match the existing design system.
+═══════════════════════════════════════════════════════════ */
+
+/* ─── Summary card — 6th variant (In-Person Required) ──── */
+
+.summary-card--in-person { border-left: 3px solid #8b5cf6; }
+
+/* ─── Status badge — In-Person Required ─────────────────── */
+
+.status-badge--in-person-required {
+  color: #5b21b6;
+  background: #f5f3ff;
+  border: 1px solid #ddd6fe;
+}
+
+/* ─── Clearance section office note ─────────────────────── */
+/* Used for contextual info inside each office clearance block */
+
+.clearance-section__office-note {
+  font-size: 12px;
+  color: #1e40af;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin: 0 0 10px;
+}
+
+/* ─── Action button — In-Person Required ────────────────── */
+
+.status-action-btn--in-person-required {
+  background: #f5f3ff;
+  color: #5b21b6;
+  border-color: #ddd6fe;
+}
+.status-action-btn--in-person-required:hover:not(:disabled) {
+  background: #ede9fe;
+  border-color: #c4b5fd;
+}
+
+/* ─── Next-step message — In-Person Required ────────────── */
+
+.next-step-message--in-person-required {
+  background: #f5f3ff;
+}
+.next-step-message--in-person-required .next-step-message__text {
+  color: #5b21b6;
+}
+
+/* ─── Clearance tracker row — In-Person Required ────────── */
+
+.clearance-track-row--in-person-required {
+  background: #f5f3ff;
+  border-color: #ddd6fe;
+}
+
+/* ─── Admin table — Submitted At cell ───────────────────── */
+
+.table-submitted-at {
+  white-space: nowrap;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+/* ─── Portal card — course and document sections ────────── */
+
+.portal-app-card__section {
+  padding: 16px 24px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.portal-app-card__section-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #374151;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0 0 10px;
+}
+
+/* ─── Portal course list ─────────────────────────────────── */
+
+.portal-course-list {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.portal-course-row {
+  display: grid;
+  grid-template-columns: 90px 1fr 80px auto;
+  gap: 10px;
+  padding: 9px 12px;
+  font-size: 13px;
+  align-items: center;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.portal-course-row:last-child {
+  border-bottom: none;
+}
+
+.portal-course-row:nth-child(even) {
+  background: #fafafa;
+}
+
+.portal-course-row__code {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: #2563eb;
+}
+
+.portal-course-row__title {
+  color: #1e293b;
+  font-weight: 500;
+}
+
+.portal-course-row__credits {
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.portal-course-row__schedule {
+  color: #9ca3af;
+  font-size: 12px;
+}
+
+/* ─── Portal document list ───────────────────────────────── */
+
+.portal-doc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.portal-doc-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.portal-doc-row__name {
+  font-weight: 600;
+  color: #1e293b;
+  flex: 1;
+}
+
+.portal-doc-row__file {
+  font-size: 11px;
+  color: #9ca3af;
+  font-family: ui-monospace, Consolas, monospace;
+}
+
+/* ─── Portal course list responsive ─────────────────────── */
+
+@media (max-width: 600px) {
+  .portal-course-row {
+    grid-template-columns: 80px 1fr;
+  }
+
+  .portal-course-row__credits,
+  .portal-course-row__schedule {
+    display: none;
+  }
+
+  .portal-app-card__section {
+    padding: 12px 16px;
   }
 }

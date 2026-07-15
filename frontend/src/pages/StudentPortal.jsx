@@ -56,6 +56,7 @@ function NextStepMessage({ overallStatus }) {
     'In Progress':         'Your registration is being reviewed by the required offices.',
     'Correction Required': 'One or more offices requested a correction. Review the message below and update your information if needed.',
     'Rejected':            'Your registration was rejected. Please contact the appropriate office for next steps.',
+    'In-Person Required':  'Your digital clearances are nearly complete. Please visit Public Safety for any required in-person ID processing.',
   }
 
   const text = messages[overallStatus] || messages['In Progress']
@@ -69,7 +70,7 @@ function NextStepMessage({ overallStatus }) {
 }
 
 /* -------------------------------------------------------
-   ClearanceTracker — shows the status of all five
+   ClearanceTracker — shows the status of all seven
    clearances for one application
 ------------------------------------------------------- */
 function ClearanceTracker({ clearances }) {
@@ -114,8 +115,10 @@ function ApplicationStatusCard({ application }) {
   const {
     fullName, studentId, registrationTerm, major,
     totalCreditHours, submittedAt,
-    clearances   = {},
-    overallStatus = 'In Progress',
+    selectedCourses   = [],
+    uploadedDocuments = [],
+    clearances        = {},
+    overallStatus     = 'In Progress',
   } = application
 
   return (
@@ -137,7 +140,7 @@ function ApplicationStatusCard({ application }) {
           <span className="portal-app-card__summary-value">{studentId || '—'}</span>
         </div>
         <div className="portal-app-card__summary-item">
-          <span className="portal-app-card__summary-label">Term</span>
+          <span className="portal-app-card__summary-label">Enrollment Term</span>
           <span className="portal-app-card__summary-value">{registrationTerm || '—'}</span>
         </div>
         <div className="portal-app-card__summary-item">
@@ -145,17 +148,49 @@ function ApplicationStatusCard({ application }) {
           <span className="portal-app-card__summary-value">{major || '—'}</span>
         </div>
         <div className="portal-app-card__summary-item">
-          <span className="portal-app-card__summary-label">Credit Hours</span>
+          <span className="portal-app-card__summary-label">Total Credit Hours</span>
           <span className="portal-app-card__summary-value">{totalCreditHours ?? '—'}</span>
         </div>
         <div className="portal-app-card__summary-item">
-          <span className="portal-app-card__summary-label">Submitted</span>
+          <span className="portal-app-card__summary-label">Submitted At</span>
           <span className="portal-app-card__summary-value">{formatDate(submittedAt)}</span>
         </div>
       </div>
 
       {/* Next step guidance */}
       <NextStepMessage overallStatus={overallStatus} />
+
+      {/* Selected courses */}
+      {selectedCourses.length > 0 && (
+        <div className="portal-app-card__section">
+          <h3 className="portal-app-card__section-title">Selected Courses</h3>
+          <div className="portal-course-list">
+            {selectedCourses.map((course) => (
+              <div key={course.id || course.code} className="portal-course-row">
+                <span className="portal-course-row__code">{course.code}</span>
+                <span className="portal-course-row__title">{course.title}</span>
+                <span className="portal-course-row__credits">{course.credits} credits</span>
+                <span className="portal-course-row__schedule">{course.schedule}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Document summary */}
+      {uploadedDocuments.length > 0 && (
+        <div className="portal-app-card__section">
+          <h3 className="portal-app-card__section-title">Submitted Documents</h3>
+          <div className="portal-doc-list">
+            {uploadedDocuments.map(({ documentId, fileName }) => (
+              <div key={documentId} className="portal-doc-row">
+                <span className="portal-doc-row__name">{documentId}</span>
+                <span className="portal-doc-row__file">{fileName}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Office clearance tracker */}
       <div className="portal-app-card__clearances">

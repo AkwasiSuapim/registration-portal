@@ -1,34 +1,40 @@
 /*
   registrationWorkflow.js
   -----------------------
-  Shared business logic for the office-based clearance workflow.
+  Shared business logic for the digital version of the physical
+  Livingstone College registration validation card.
 
-  Each submitted application goes through five clearance offices before
-  a student is considered fully registered.  This file holds all the
-  constants and pure functions that both the AdminDashboard and the
-  StudentPortal need so the logic is never duplicated.
+  Physical process: students walk from office to office collecting
+  signatures/stamps from each station.
+  Digital equivalent: each office updates its assigned clearance online,
+  and students can track their overall registration status in real time.
 */
 
 /* -------------------------------------------------------
-   Clearance keys — one entry per office, in review order
+   Clearance keys — one entry per office, in typical
+   registration-card order
 ------------------------------------------------------- */
 export const CLEARANCE_KEYS = [
-  'admissions',
+  'registrarCheckIn',
+  'healthServices',
+  'successCenter',
   'financialAid',
-  'healthClinic',
-  'academicAdvisor',
-  'registrar',
+  'businessOffice',
+  'residenceLife',
+  'publicSafety',
 ]
 
 /* -------------------------------------------------------
-   Clearance labels — human-readable name for each key
+   Human-readable labels for each clearance key
 ------------------------------------------------------- */
 const CLEARANCE_LABELS = {
-  admissions:      'Admissions Clearance',
-  financialAid:    'Financial Clearance',
-  healthClinic:    'Health Clearance',
-  academicAdvisor: 'Advisor Clearance',
-  registrar:       'Registrar Final Review',
+  registrarCheckIn: 'Registrar Check-In Clearance',
+  healthServices:   'Health / Immunization Clearance',
+  successCenter:    'Academic / Course Registration Clearance',
+  financialAid:     'Financial Aid Clearance',
+  businessOffice:   'Business Office / Payment Validation',
+  residenceLife:    'Housing / Residence Life Clearance',
+  publicSafety:     'Public Safety / ID Clearance',
 }
 
 export function getClearanceLabel(clearanceKey) {
@@ -36,33 +42,42 @@ export function getClearanceLabel(clearanceKey) {
 }
 
 /* -------------------------------------------------------
-   Office role → clearance key mapping.
-   Each office can only update the clearance assigned to its role.
+   Office roles — the seven stations in the physical
+   registration-card process, now mapped to digital clearances.
+   Each role can update exactly one assigned clearance section.
 ------------------------------------------------------- */
 export const OFFICE_ROLES = [
-  'Admissions Office',
+  'Welcome Desk / Registrar',
+  'Health Services',
+  'Success Center',
   'Financial Aid',
-  'Health Clinic',
-  'Academic Advisor',
-  'Registrar',
+  'Business Office / Cashier',
+  'Residence Life',
+  'Public Safety',
 ]
 
+// Role-to-clearance mapping — mirrors the physical card:
+// each station stamps only its own section.
 const officeRoleToClearance = {
-  'Admissions Office': 'admissions',
-  'Financial Aid':     'financialAid',
-  'Health Clinic':     'healthClinic',
-  'Academic Advisor':  'academicAdvisor',
-  'Registrar':         'registrar',
+  'Welcome Desk / Registrar':  'registrarCheckIn',
+  'Health Services':           'healthServices',
+  'Success Center':            'successCenter',
+  'Financial Aid':             'financialAid',
+  'Business Office / Cashier': 'businessOffice',
+  'Residence Life':            'residenceLife',
+  'Public Safety':             'publicSafety',
 }
 
-// Returns the clearance key this office role is allowed to update,
-// or null if the role is unrecognised.
-export function getAllowedClearanceKey(officeRole) {
+export function getAllowedClearanceForRole(officeRole) {
   return officeRoleToClearance[officeRole] || null
 }
 
+// Backward-compatible alias — used by AdminDashboard until Phase 4 updates it
+export const getAllowedClearanceKey = getAllowedClearanceForRole
+
 /* -------------------------------------------------------
-   Default clearance object — Pending status, empty fields
+   Default clearances — new submissions start with all
+   seven clearances in Pending state
 ------------------------------------------------------- */
 function buildDefaultClearance(key) {
   return {
@@ -74,7 +89,6 @@ function buildDefaultClearance(key) {
   }
 }
 
-// Returns a fresh clearances object with every section set to Pending.
 export function getDefaultClearances() {
   const clearances = {}
   for (const key of CLEARANCE_KEYS) {
@@ -85,64 +99,125 @@ export function getDefaultClearances() {
 
 /* -------------------------------------------------------
    Overall status calculation
-   A student is fully registered only when every required clearance
-   is approved.  If any clearance is rejected the overall status
-   reflects that immediately.
+   Rules are applied in priority order:
+   1. Any clearance Rejected            → Rejected
+   2. Any clearance Correction Required → Correction Required
+   3. All others Approved + publicSafety is In-Person Required → In-Person Required
+   4. All clearances Approved           → Fully Registered
+   5. Otherwise                         → In Progress
 ------------------------------------------------------- */
-export function calculateOverallStatus(clearances) {
+export function calculateOverallStatus(applicationOrClearances) {
+  // Accept either a full application object { clearances: {...} }
+  // or a raw clearances map — keeps backward compatibility with
+  // existing AdminDashboard calls that pass clearances directly
+  const clearances  = applicationOrClearances?.clearances ?? applicationOrClearances
   if (!clearances) return 'In Progress'
 
-  const statuses = CLEARANCE_KEYS.map((key) => clearances[key]?.status || 'Pending')
+  const statusOf    = (key) => clearances[key]?.status || 'Pending'
+  const allStatuses = CLEARANCE_KEYS.map(statusOf)
 
-  if (statuses.some((s) => s === 'Rejected'))            return 'Rejected'
-  if (statuses.some((s) => s === 'Correction Required')) return 'Correction Required'
-  if (statuses.every((s) => s === 'Approved'))           return 'Fully Registered'
+  if (allStatuses.some((s) => s === 'Rejected'))            return 'Rejected'
+  if (allStatuses.some((s) => s === 'Correction Required')) return 'Correction Required'
+
+  // Public Safety may require an in-person visit for photo ID processing.
+  // If all other offices have approved and only Public Safety needs the
+  // in-person step, surface that as its own status so the student knows
+  // exactly what action to take next.
+  const nonPublicSafetyKeys = CLEARANCE_KEYS.filter((k) => k !== 'publicSafety')
+  const allOthersApproved   = nonPublicSafetyKeys.every((k) => statusOf(k) === 'Approved')
+  if (statusOf('publicSafety') === 'In-Person Required' && allOthersApproved) {
+    return 'In-Person Required'
+  }
+
+  if (allStatuses.every((s) => s === 'Approved')) return 'Fully Registered'
   return 'In Progress'
 }
 
 /* -------------------------------------------------------
    Application normalisation
-   Older applications may not have clearance data yet, so we add
-   default clearances safely rather than crashing.
+   Older applications saved under the previous 5-office format
+   will be missing the new clearance keys.  We add defaults
+   so the dashboard and portal never crash on old data.
 ------------------------------------------------------- */
 export function normalizeApplication(application) {
-  if (application.clearances) {
-    // Application already has clearances — just make sure overallStatus is in sync
-    return {
-      ...application,
-      overallStatus: calculateOverallStatus(application.clearances),
-    }
+  const existing   = application.clearances || {}
+  const normalized = {}
+
+  for (const key of CLEARANCE_KEYS) {
+    // Keep any existing clearance data; fill in missing keys with defaults
+    normalized[key] = existing[key] || buildDefaultClearance(key)
   }
 
-  // First time this application is seen by the new workflow — add defaults
-  const clearances = getDefaultClearances()
   return {
     ...application,
-    clearances,
-    overallStatus: 'In Progress',
+    clearances:    normalized,
+    overallStatus: calculateOverallStatus(normalized),
   }
 }
 
+export function normalizeApplications(applications) {
+  return applications.map(normalizeApplication)
+}
+
 /* -------------------------------------------------------
-   localStorage helpers — shared key and read/write logic
+   getClearanceEntries — returns an ordered array of
+   { key, label, clearance } objects so pages can render
+   the clearance tracker without manually iterating CLEARANCE_KEYS
+------------------------------------------------------- */
+export function getClearanceEntries(application) {
+  const clearances = application?.clearances || {}
+  return CLEARANCE_KEYS.map((key) => ({
+    key,
+    label:     getClearanceLabel(key),
+    clearance: clearances[key] || buildDefaultClearance(key),
+  }))
+}
+
+/* -------------------------------------------------------
+   Validation helpers — shared by Login.jsx and StudentForm
+------------------------------------------------------- */
+
+// Student ID: must start with 100 and be exactly 9 digits total
+export function isValidStudentId(identifier) {
+  return /^100\d{6}$/.test(identifier.trim())
+}
+
+// Student email: must use the official student domain
+export function isValidStudentEmail(identifier) {
+  return identifier.trim().toLowerCase().endsWith('@student.livingstone.edu')
+}
+
+// Staff email: must use the staff domain, not the student subdomain
+export function isValidStaffEmail(email) {
+  const lower = email.trim().toLowerCase()
+  return lower.endsWith('@livingstone.edu') && !lower.endsWith('@student.livingstone.edu')
+}
+
+// Returns true if the identifier is a valid student login value —
+// either a correctly-formatted student ID or a valid student email
+export function isEduStudentIdentifier(identifier) {
+  return isValidStudentId(identifier) || isValidStudentEmail(identifier)
+}
+
+/* -------------------------------------------------------
+   localStorage helpers
 ------------------------------------------------------- */
 export const STORAGE_KEY = 'studentRegistrationApplications'
 
 export function loadApplications() {
   try {
-    // Also migrate data from the old key ('registrations') if needed
-    const legacy = JSON.parse(localStorage.getItem('registrations') || '[]')
-    const current = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')
+    // Migrate legacy data saved under the old key ('registrations')
+    const legacy  = JSON.parse(localStorage.getItem('registrations') || '[]')
+    const current = JSON.parse(localStorage.getItem(STORAGE_KEY)    || '[]')
 
     if (legacy.length > 0 && current.length === 0) {
-      // Migrate legacy submissions to the new key with clearance data added
-      const migrated = legacy.map(normalizeApplication)
+      const migrated = normalizeApplications(legacy)
       localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated))
       localStorage.removeItem('registrations')
       return migrated
     }
 
-    return current.map(normalizeApplication)
+    return normalizeApplications(current)
   } catch {
     return []
   }
@@ -152,6 +227,6 @@ export function saveApplications(applications) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(applications))
   } catch {
-    // localStorage unavailable — silently ignore in this prototype
+    // localStorage may be unavailable in some restricted browser contexts
   }
 }

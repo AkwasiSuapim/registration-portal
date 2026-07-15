@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { getDefaultClearances, STORAGE_KEY } from '../utils/registrationWorkflow'
+import { getDefaultClearances, calculateOverallStatus, STORAGE_KEY } from '../utils/registrationWorkflow'
 
 /* -------------------------------------------------------
    Initial form state
@@ -213,13 +213,14 @@ function validateRequiredDocuments(documentUploads, classification) {
 }
 
 // Returns an array of error strings for insufficient course credit hours.
+// Livingstone College requires at least 15 credit hours for full registration.
 function validateCourseSelection(selectedCourses, totalCreditHours) {
   if (selectedCourses.length === 0) {
     return ['Please select at least one course.']
   }
-  if (totalCreditHours < 12) {
+  if (totalCreditHours < 15) {
     return [
-      'You must select at least 12 credit hours before submitting your registration.',
+      'You must select at least 15 credit hours before submitting your registration.',
     ]
   }
   return []
@@ -417,7 +418,7 @@ function StudentForm() {
       submittedAt:   new Date().toISOString(),
       // Each new submission starts with all clearances in Pending state
       clearances:    getDefaultClearances(),
-      overallStatus: 'In Progress',
+      overallStatus: calculateOverallStatus(getDefaultClearances()),
     }
 
     // Save to localStorage so the Admin Dashboard and Student Portal can display this submission
@@ -545,9 +546,9 @@ function StudentForm() {
           ))}
         </div>
 
-        {totalCreditHours > 0 && totalCreditHours < 12 && (
+        {totalCreditHours > 0 && totalCreditHours < 15 && (
           <p className="form-warning">
-            Warning: full-time registration usually requires at least 12 credit hours.
+            Warning: you need at least 15 credit hours to submit your registration.
           </p>
         )}
 

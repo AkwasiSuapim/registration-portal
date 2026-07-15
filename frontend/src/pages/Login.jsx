@@ -1,68 +1,82 @@
 import { useState } from 'react'
-import { OFFICE_ROLES } from '../utils/registrationWorkflow'
+import {
+  OFFICE_ROLES,
+  isValidStudentEmail,
+  isValidStaffEmail,
+  isEduStudentIdentifier,
+} from '../utils/registrationWorkflow'
 
-// This is a frontend-only session used for the prototype.
+// This is frontend-only login simulation for the prototype.
 // Real authentication will be handled by the backend later.
 
 /* -------------------------------------------------------
-   Field definitions for each form type
+   Reusable form field — reuses existing .form-field styles
 ------------------------------------------------------- */
-const STUDENT_FIELDS = [
-  {
-    name:        'studentId',
-    label:       'Student ID',
-    type:        'text',
-    placeholder: 'e.g. LC001245',
-  },
-  {
-    name:        'email',
-    label:       'Email Address',
-    type:        'email',
-    placeholder: 'e.g. student@livingstone.edu',
-  },
-]
-
-const OFFICIAL_FIELDS = [
-  {
-    name:        'staffName',
-    label:       'Staff Name',
-    type:        'text',
-    placeholder: 'e.g. Dr. Morgan Lee',
-  },
-  {
-    name:        'staffEmail',
-    label:       'Staff Email',
-    type:        'email',
-    placeholder: 'e.g. staff@livingstone.edu',
-  },
-]
-
-/* -------------------------------------------------------
-   isEduEmail — checks that an email ends with .edu.
-   Keeps it simple: .edu suffix only, no domain restriction yet.
-------------------------------------------------------- */
-function isEduEmail(email) {
-  return email.trim().toLowerCase().endsWith('.edu')
-}
-
-/* -------------------------------------------------------
-   Reusable text/email input — reuses .form-field styles
-------------------------------------------------------- */
-function LoginField({ field, value, onChange }) {
+function LoginField({ label, type, name, value, placeholder, onChange }) {
   return (
     <label className="form-field">
-      <span className="form-field__label">{field.label}</span>
+      <span className="form-field__label">{label}</span>
       <input
         className="form-field__control"
-        type={field.type}
-        name={field.name}
+        type={type}
+        name={name}
         value={value}
-        placeholder={field.placeholder}
+        placeholder={placeholder}
         onChange={onChange}
         autoComplete="off"
       />
     </label>
   )
+}
+
+/* -------------------------------------------------------
+   validateStudentForm — returns an array of error strings.
+   Students log in with either a student ID or student email,
+   plus a password (not verified yet — backend will handle that).
+------------------------------------------------------- */
+function validateStudentForm(identifier, password) {
+  const errs = []
+
+  if (!identifier.trim()) {
+    errs.push('Student ID or Email is required.')
+  } else if (!isEduStudentIdentifier(identifier)) {
+    // Give a specific message based on what the user appeared to enter
+    if (identifier.includes('@')) {
+      errs.push('Please use your Livingstone student email ending in @student.livingstone.edu.')
+    } else {
+      errs.push('Student ID must start with 100 and contain 9 digits total.')
+    }
+  }
+
+  if (!password.trim()) {
+    errs.push('Password is required.')
+  }
+
+  return errs
+}
+
+/* -------------------------------------------------------
+   validateOfficialForm — returns an array of error strings.
+   Officials log in with their staff email, password, and office role.
+------------------------------------------------------- */
+function validateOfficialForm(staffEmail, password, officeRole) {
+  const errs = []
+
+  if (!staffEmail.trim()) {
+    errs.push('Staff Email is required.')
+  } else if (!isValidStaffEmail(staffEmail)) {
+    errs.push('Please use your official Livingstone staff email ending in @livingstone.edu.')
+  }
+
+  if (!password.trim()) {
+    errs.push('Password is required.')
+  }
+
+  if (!officeRole) {
+    errs.push('Please select an Office Role.')
+  }
+
+  return errs
 }
 
 /* -------------------------------------------------------
@@ -72,13 +86,8 @@ function Login({ onNavigate, onLogin }) {
   // 'student' | 'official' | '' (nothing selected yet)
   const [accessType, setAccessType] = useState('')
 
-  const [formData, setFormData] = useState({
-    studentId:  '',
-    email:      '',
-    staffName:  '',
-    staffEmail: '',
-    officeRole: '',
-  })
+  const [studentForm, setStudentForm]   = useState({ identifier: '', password: '' })
+  const [officialForm, setOfficialForm] = useState({ staffEmail: '', password: '', officeRole: '' })
 
   const [errors, setErrors] = useState([])
 
@@ -87,64 +96,34 @@ function Login({ onNavigate, onLogin }) {
     setErrors([])
   }
 
-  const handleFieldChange = (event) => {
+  const handleStudentChange = (event) => {
     const { name, value } = event.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
+    setStudentForm((prev) => ({ ...prev, [name]: value }))
   }
 
-  // Returns an array of error strings.
-  // An empty array means the form is valid.
-  const validateLoginForm = () => {
-    const errs = []
-
-    if (!accessType) {
-      errs.push('Please select an access type to continue.')
-      return errs
-    }
-
-    if (accessType === 'student') {
-      if (!formData.studentId.trim()) {
-        errs.push('Student ID is required.')
-      }
-      if (!formData.email.trim()) {
-        errs.push('Email is required.')
-      } else if (!isEduEmail(formData.email)) {
-        errs.push('Please use your official school email ending in .edu.')
-      }
-    }
-
-    if (accessType === 'official') {
-      if (!formData.staffName.trim()) {
-        errs.push('Staff Name is required.')
-      }
-      if (!formData.staffEmail.trim()) {
-        errs.push('Staff Email is required.')
-      } else if (!isEduEmail(formData.staffEmail)) {
-        errs.push('Please use your official staff email ending in .edu.')
-      }
-      if (!formData.officeRole) {
-        errs.push('Please select an Office Role.')
-      }
-    }
-
-    return errs
+  const handleOfficialChange = (event) => {
+    const { name, value } = event.target
+    setOfficialForm((prev) => ({ ...prev, [name]: value }))
   }
 
   const handleLogin = () => {
-    const errs = validateLoginForm()
-
-    if (errs.length > 0) {
-      setErrors(errs)
+    if (!accessType) {
+      setErrors(['Please select an access type to continue.'])
       return
     }
 
-    let session
-
     if (accessType === 'student') {
-      session = {
-        userType:  'student',
-        studentId: formData.studentId.trim(),
-        email:     formData.email.trim(),
+      const errs = validateStudentForm(studentForm.identifier, studentForm.password)
+      if (errs.length > 0) { setErrors(errs); return }
+
+      // Determine whether the student used an ID or email so the
+      // Student Portal can match their application correctly
+      const usedEmail = isValidStudentEmail(studentForm.identifier)
+      const session = {
+        userType:    'student',
+        loginMethod: usedEmail ? 'email' : 'studentId',
+        studentId:   usedEmail ? '' : studentForm.identifier.trim(),
+        email:       usedEmail ? studentForm.identifier.trim() : '',
       }
       localStorage.setItem('portalUserSession', JSON.stringify(session))
       onLogin(session)
@@ -152,14 +131,21 @@ function Login({ onNavigate, onLogin }) {
       return
     }
 
-    // Officials choose an office role so the dashboard can apply role-based permissions.
-    // We also store 'role' alongside 'officeRole' for compatibility with AdminDashboard.
-    session = {
+    // Official login
+    const errs = validateOfficialForm(
+      officialForm.staffEmail,
+      officialForm.password,
+      officialForm.officeRole,
+    )
+    if (errs.length > 0) { setErrors(errs); return }
+
+    // 'role' is stored alongside 'officeRole' for backward compatibility
+    // with AdminDashboard's session reading until Phase 4 updates it.
+    const session = {
       userType:   'official',
-      staffName:  formData.staffName.trim(),
-      staffEmail: formData.staffEmail.trim(),
-      officeRole: formData.officeRole,
-      role:       formData.officeRole,
+      staffEmail: officialForm.staffEmail.trim(),
+      officeRole: officialForm.officeRole,
+      role:       officialForm.officeRole,
     }
     localStorage.setItem('portalUserSession', JSON.stringify(session))
     onLogin(session)
@@ -178,12 +164,12 @@ function Login({ onNavigate, onLogin }) {
           </p>
         </div>
 
-        {/* Body */}
         <div className="login-card__body">
 
           {/* Step 1 — access type selection */}
           <p className="login-step-label">Step 1 — Select your access type</p>
           <div className="access-type-grid">
+
             <button
               type="button"
               className={`access-type-card${accessType === 'student' ? ' access-type-card--selected' : ''}`}
@@ -211,49 +197,63 @@ function Login({ onNavigate, onLogin }) {
                 Review and process student registration applications
               </span>
             </button>
+
           </div>
 
-          {/* Step 2 — form fields based on access type */}
+          {/* Step 2 — student fields */}
           {accessType === 'student' && (
             <div className="login-form">
               <p className="login-step-label">Step 2 — Enter your student details</p>
-              {STUDENT_FIELDS.map((field) => (
-                <LoginField
-                  key={field.name}
-                  field={field}
-                  value={formData[field.name]}
-                  onChange={handleFieldChange}
-                />
-              ))}
+              <LoginField
+                label="Student ID or Email"
+                type="text"
+                name="identifier"
+                value={studentForm.identifier}
+                placeholder="e.g. 100123456 or jdoe@student.livingstone.edu"
+                onChange={handleStudentChange}
+              />
+              <LoginField
+                label="Password"
+                type="password"
+                name="password"
+                value={studentForm.password}
+                placeholder="Enter your password"
+                onChange={handleStudentChange}
+              />
             </div>
           )}
 
+          {/* Step 2 — official fields */}
           {accessType === 'official' && (
             <div className="login-form">
               <p className="login-step-label">Step 2 — Enter your staff details</p>
-              {OFFICIAL_FIELDS.map((field) => (
-                <LoginField
-                  key={field.name}
-                  field={field}
-                  value={formData[field.name]}
-                  onChange={handleFieldChange}
-                />
-              ))}
-
-              {/* Office role — officials must select the office they belong to */}
+              <LoginField
+                label="Staff Email"
+                type="email"
+                name="staffEmail"
+                value={officialForm.staffEmail}
+                placeholder="e.g. jdoe@livingstone.edu"
+                onChange={handleOfficialChange}
+              />
+              <LoginField
+                label="Password"
+                type="password"
+                name="password"
+                value={officialForm.password}
+                placeholder="Enter your password"
+                onChange={handleOfficialChange}
+              />
               <label className="form-field">
                 <span className="form-field__label">Office Role</span>
                 <select
                   className="form-field__control"
                   name="officeRole"
-                  value={formData.officeRole}
-                  onChange={handleFieldChange}
+                  value={officialForm.officeRole}
+                  onChange={handleOfficialChange}
                 >
                   <option value="">Select your office role</option>
                   {OFFICE_ROLES.map((role) => (
-                    <option key={role} value={role}>
-                      {role}
-                    </option>
+                    <option key={role} value={role}>{role}</option>
                   ))}
                 </select>
               </label>
@@ -264,14 +264,12 @@ function Login({ onNavigate, onLogin }) {
           {errors.length > 0 && (
             <div className="login-errors" role="alert">
               {errors.map((err, index) => (
-                <p key={index} className="login-errors__item">
-                  {err}
-                </p>
+                <p key={index} className="login-errors__item">{err}</p>
               ))}
             </div>
           )}
 
-          {/* Submit — only shown once access type is chosen */}
+          {/* Submit — only shown once an access type is selected */}
           {accessType && (
             <button
               type="button"
