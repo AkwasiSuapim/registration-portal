@@ -28,6 +28,9 @@ class Settings(BaseSettings):
     # Directory where uploaded files are stored (relative to the backend folder)
     UPLOAD_DIR: str = "uploads"
 
+    # Maximum allowed upload size in megabytes
+    MAX_UPLOAD_SIZE_MB: int = 10
+
 
 # Single shared instance — import `settings` everywhere instead of re-instantiating.
 settings = Settings()

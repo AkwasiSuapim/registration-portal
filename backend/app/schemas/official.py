@@ -5,6 +5,7 @@ from pydantic import BaseModel, computed_field
 
 from app.schemas.clearance import ClearanceResponse
 from app.schemas.course import CourseResponse
+from app.schemas.document import DocumentResponse
 
 
 class StudentSummary(BaseModel):
@@ -56,6 +57,7 @@ class ApplicationReviewResponse(BaseModel):
     student: StudentSummary
     courses: list[CourseResponse]
     clearances: list[ClearanceResponse]
+    documents: list[DocumentResponse]
 
     @computed_field
     @property

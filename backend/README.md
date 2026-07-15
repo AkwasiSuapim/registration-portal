@@ -363,3 +363,99 @@ backend/
   .env.example
   README.md
 ```
+
+---
+
+## Document upload API (Phase 7)
+
+Files are stored locally under `backend/uploads/documents/` and served only through authorized API routes. Raw file paths are never exposed in API responses.
+
+**Upload a document for an application (student only):**
+
+```bash
+curl -X POST "http://localhost:8000/applications/{application_id}/documents" \
+  -H "Authorization: Bearer STUDENT_TOKEN" \
+  -F "document_type=immunization_record" \
+  -F "file=@/path/to/immunization.pdf"
+```
+
+**List documents for an application:**
+
+```bash
+curl "http://localhost:8000/applications/{application_id}/documents" \
+  -H "Authorization: Bearer TOKEN"
+```
+
+**Download a document by ID:**
+
+```bash
+curl "http://localhost:8000/documents/{document_id}/download" \
+  -H "Authorization: Bearer TOKEN" \
+  --output downloaded_file.pdf
+```
+
+**Allowed file types:**
+- PDF (`application/pdf`, `.pdf`)
+- PNG (`image/png`, `.png`)
+- JPEG (`image/jpeg`, `.jpg`, `.jpeg`)
+- DOCX (`application/vnd.openxmlformats-officedocument.wordprocessingml.document`, `.docx`)
+
+**Max file size:** 10 MB per file
+
+**Allowed document types:** `photo_id`, `immunization_record`, `financial_aid_form`, `scholarship_agreement`, `housing_form`, `transcript`, `course_schedule`, `other`
+
+Business rules enforced by the backend:
+- Only authenticated students can upload documents to their own application.
+- Officials and admins can list and download documents for review, but cannot upload.
+- Unauthenticated access is rejected (401).
+- Unsupported file types return 415.
+- Files over 10 MB return 413.
+- Raw server file paths are never returned in API responses.
+- Re-uploading the same document type creates a new version linked via `supersedes_document_id`.
+
+---
+
+## Final Improvement / Refactor Checklist
+
+Use this checklist before portfolio submission or production deployment.
+
+1. **Review `current_step` design**
+   - Currently uses `"fully_registered"` as a sentinel when all clearances are done (the DB column is `NOT NULL`).
+   - Decide whether to make `current_step` nullable (requires migration) or keep the sentinel string.
+
+2. **Review overall workflow status naming**
+   - Confirm `in_progress`, `correction_required`, `rejected`, `in_person_required`, `fully_registered` are clear for the frontend and users.
+
+3. **Review database constraints**
+   - Check NOT NULL fields are appropriate.
+   - Check indexes cover common queries.
+   - Check ON DELETE behaviors match expected cascade/restrict rules.
+   - Confirm duplicate-prevention rules (unique constraints) are in place.
+
+4. **Review API responses**
+   - Confirm the frontend receives all data it needs without extra roundtrips.
+   - Check for confusing or redundant field names.
+   - Ensure `download_url` is always usable from the frontend.
+
+5. **Review security**
+   - Student access rules: students can only see/upload their own data.
+   - Official role permissions: officials can only update their assigned clearance.
+   - File upload safety: extension validation, content-type check, size limit, path traversal guard.
+   - JWT expiry and behavior when token is revoked.
+   - Raw file paths are never returned in API responses.
+
+6. **Review tests**
+   - Add missing edge cases (e.g., file missing on disk, magic byte validation).
+   - Test the full workflow: student submits → registrar approves → all offices clear → fully registered.
+   - Test commuter vs. residential paths explicitly.
+   - Test document replacement and access control thoroughly.
+
+7. **Review README**
+   - Clean it up for portfolio or demo use.
+   - Remove or hide internal developer notes.
+
+8. **Review frontend user experience**
+   - Confirm students can clearly see which clearances are ready, locked, or need action.
+   - Confirm officials can see their queue efficiently.
+   - Confirm document upload feedback is clear.
+   - Consider adding a progress indicator for the full registration flow.

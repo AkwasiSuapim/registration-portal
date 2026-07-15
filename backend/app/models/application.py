@@ -71,7 +71,9 @@ class Application(Base):
         back_populates="application",
         cascade="all, delete-orphan",
     )
-    documents = relationship("Document", back_populates="application")
+    # passive_deletes tells SQLAlchemy to let the DB's ON DELETE CASCADE
+    # handle document rows rather than trying to nullify application_id first.
+    documents = relationship("Document", back_populates="application", passive_deletes=True)
     clearances = relationship(
         "Clearance",
         back_populates="application",

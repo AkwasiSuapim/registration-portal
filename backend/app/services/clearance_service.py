@@ -131,12 +131,14 @@ def get_application_for_official_review(
     Loads a full application with student, courses, and clearances for an official to review.
     Returns 404 if the application does not exist.
     """
+    from app.models.document import Document as DocumentModel
     application = (
         db.query(Application)
         .options(
             joinedload(Application.student),
             joinedload(Application.courses),
             joinedload(Application.clearances),
+            joinedload(Application.documents),
         )
         .filter_by(id=application_id)
         .first()
