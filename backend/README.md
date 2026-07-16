@@ -415,6 +415,97 @@ Business rules enforced by the backend:
 
 ---
 
+## Notifications API (Phase 8)
+
+In-app notifications keep students and office staff informed about registration events. No email is sent — only database rows.
+
+**List notifications for the logged-in user:**
+
+```bash
+curl "http://localhost:8000/notifications" \
+  -H "Authorization: Bearer TOKEN"
+# Optional: ?unread_only=true&limit=50&offset=0
+```
+
+Response includes `notifications`, `unread_count`, and `total_count`. Students see only notifications sent to them directly. Officials also see notifications addressed to their office role.
+
+**Get unread notification count:**
+
+```bash
+curl "http://localhost:8000/notifications/unread-count" \
+  -H "Authorization: Bearer TOKEN"
+```
+
+**Mark one notification as read:**
+
+```bash
+curl -X PATCH "http://localhost:8000/notifications/{notification_id}/read" \
+  -H "Authorization: Bearer TOKEN"
+```
+
+Idempotent — safe to call more than once.
+
+**Mark all notifications as read:**
+
+```bash
+curl -X PATCH "http://localhost:8000/notifications/read-all" \
+  -H "Authorization: Bearer TOKEN"
+```
+
+Returns `{"marked_read_count": N, "message": "..."}`.
+
+---
+
+## Audit and Activity API (Phase 8)
+
+Every significant action (application submitted, clearance updated, document uploaded) is recorded in the audit log.
+
+**Get activity history for an application:**
+
+```bash
+curl "http://localhost:8000/applications/{application_id}/activity" \
+  -H "Authorization: Bearer TOKEN"
+# Optional: ?limit=100&offset=0
+```
+
+Students may only view their own application's activity. Officials and admins may view any application's activity.
+
+Response:
+```json
+{
+  "application_id": "...",
+  "total_count": 3,
+  "activity": [
+    {
+      "id": 42,
+      "occurred_at": "2026-01-15T10:30:00Z",
+      "actor_user_id": "...",
+      "actor_role_id": null,
+      "application_id": "...",
+      "entity_type": "application",
+      "entity_id": "...",
+      "action": "application_submitted",
+      "success": true,
+      "details": { "term_code": "FA2026", "major": "Computer Science" }
+    }
+  ]
+}
+```
+
+Internal fields (`ip_address`, `user_agent`, `request_id`) are never included in API responses.
+
+**Admin-only: query all audit logs across the system:**
+
+```bash
+curl "http://localhost:8000/admin/audit-logs" \
+  -H "Authorization: Bearer ADMIN_TOKEN"
+# Optional: ?limit=100&offset=0
+```
+
+Requires the `system_admin` role. Returns a paginated list of audit entries, newest first.
+
+---
+
 ## Final Improvement / Refactor Checklist
 
 Use this checklist before portfolio submission or production deployment.
