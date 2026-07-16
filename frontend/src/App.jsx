@@ -5,6 +5,7 @@ import Login from './pages/Login'
 import RegisterStudent from './pages/RegisterStudent'
 import AdminDashboard from './pages/AdminDashboard'
 import StudentPortal from './pages/StudentPortal'
+import { getToken, getCurrentUser, logout } from './services/api'
 import './App.css'
 
 /* -------------------------------------------------------
@@ -42,27 +43,55 @@ function AccessRequired({ message, onNavigate }) {
    App — root component
 ------------------------------------------------------- */
 function App() {
-  const [currentPage, setCurrentPage]       = useState('home')
-  const [currentSession, setCurrentSession] = useState(null)
+  const [currentPage, setCurrentPage]           = useState('home')
+  const [currentSession, setCurrentSession]     = useState(null)
+  const [restoringSession, setRestoringSession] = useState(true)
 
-  // Restore session from localStorage when the app first loads.
-  // This preserves login state across page refreshes.
+  // Restore session on load — if a token was saved from a previous
+  // visit, ask the backend who it belongs to via GET /auth/me. If the
+  // token is missing, expired, or invalid, this simply leaves the user
+  // logged out (api.js already clears a bad token for us).
   useEffect(() => {
-    const saved = JSON.parse(localStorage.getItem('portalUserSession') || 'null')
-    if (saved) setCurrentSession(saved)
+    if (!getToken()) {
+      setRestoringSession(false)
+      return
+    }
+    getCurrentUser()
+      .then((user) => setCurrentSession(user))
+      .catch(() => {})
+      .finally(() => setRestoringSession(false))
   }, [])
 
-  const handleLogin = (session) => {
-    setCurrentSession(session)
+  // Any API call that gets a 401 on an authenticated request dispatches
+  // this event (see services/api.js) — drop back to a logged-out state.
+  useEffect(() => {
+    const handleSessionExpired = () => {
+      setCurrentSession(null)
+      setCurrentPage('login')
+    }
+    window.addEventListener('auth:session-expired', handleSessionExpired)
+    return () => window.removeEventListener('auth:session-expired', handleSessionExpired)
+  }, [])
+
+  const handleLogin = (user) => {
+    setCurrentSession(user)
   }
 
   const handleLogout = () => {
-    localStorage.removeItem('portalUserSession')
+    logout()
     setCurrentSession(null)
     setCurrentPage('home')
   }
 
   const renderPage = () => {
+    if (restoringSession) {
+      return (
+        <div className="session-restoring">
+          <p>Restoring your session…</p>
+        </div>
+      )
+    }
+
     switch (currentPage) {
 
       case 'login':
@@ -74,12 +103,22 @@ function App() {
         )
 
       case 'register':
+        // The backend is the source of truth here too — only an
+        // authenticated student account may submit an application.
+        if (!currentSession || currentSession.account_type !== 'student') {
+          return (
+            <AccessRequired
+              message="Please log in as a student to start a registration application."
+              onNavigate={setCurrentPage}
+            />
+          )
+        }
         return <RegisterStudent onNavigate={setCurrentPage} />
 
       case 'admin':
-        // This is frontend-only access control for the prototype.
-        // Real authorization will be enforced by the backend later.
-        if (!currentSession || currentSession.userType !== 'official') {
+        // Backend-authorized access control — account_type comes from
+        // GET /auth/me / the login response, never from a frontend choice.
+        if (!currentSession || !['official', 'admin'].includes(currentSession.account_type)) {
           return (
             <AccessRequired
               message="Please log in as an official or registrar staff member to access the Admin Dashboard."
@@ -87,11 +126,10 @@ function App() {
             />
           )
         }
-        return <AdminDashboard onNavigate={setCurrentPage} />
+        return <AdminDashboard onNavigate={setCurrentPage} currentSession={currentSession} />
 
-      // Student Portal manages its own session check and application filtering internally.
       case 'student-portal':
-        return <StudentPortal onNavigate={setCurrentPage} />
+        return <StudentPortal onNavigate={setCurrentPage} currentSession={currentSession} />
 
       default:
         return <Home onNavigate={setCurrentPage} />

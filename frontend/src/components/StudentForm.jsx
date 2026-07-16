@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { getDefaultClearances, calculateOverallStatus, STORAGE_KEY } from '../utils/registrationWorkflow'
+import { createApplication } from '../services/api'
 
 /* -------------------------------------------------------
    Initial form state
@@ -23,6 +23,7 @@ const initialFormData = {
   classification:        '',
   registrationTerm:      'Fall 2026',
   academicAdvisor:       '',
+  housingRequired:       '',
 }
 
 /* -------------------------------------------------------
@@ -76,6 +77,12 @@ const academicFields = [
     options: ['Fall 2026', 'Spring 2027', 'Summer 2027'],
   },
   { name: 'academicAdvisor', label: 'Academic advisor', type: 'text', placeholder: 'Dr. Morgan Lee' },
+  {
+    name: 'housingRequired',
+    label: 'On-campus housing required?',
+    type: 'select',
+    options: ['Yes', 'No'],
+  },
 ]
 
 const courseOptions = [
@@ -159,6 +166,7 @@ const REQUIRED_FIELD_LABELS = {
   emergencyRelationship: 'Relationship',
   emergencyContactPhone: 'Emergency contact phone',
   major:                 'Major',
+  housingRequired:       'On-campus housing required?',
 }
 
 // Document IDs that must be uploaded regardless of student type
@@ -238,6 +246,34 @@ function validateForm(formData, documentUploads, selectedCourses, totalCreditHou
     errors.push('Please check the confirmation box to confirm your information is accurate.')
   }
   return errors
+}
+
+// Derives the backend "academic_year" (e.g. "2026-2027") from a
+// registration term like "Fall 2026" or "Spring 2027". Fall starts an
+// academic year; Spring/Summer fall inside the year that started the
+// previous Fall.
+function deriveAcademicYear(registrationTerm) {
+  const match = registrationTerm.match(/(\d{4})/)
+  if (!match) return ''
+  const year = Number(match[1])
+  return registrationTerm.startsWith('Fall') ? `${year}-${year + 1}` : `${year - 1}-${year}`
+}
+
+// Maps the form's state into the exact payload POST /applications expects.
+function buildApplicationPayload(formData, selectedCourses) {
+  return {
+    term_code:         formData.registrationTerm,
+    academic_year:     deriveAcademicYear(formData.registrationTerm),
+    major:             formData.major,
+    classification:    formData.classification,
+    housing_required:  formData.housingRequired === 'Yes',
+    courses: selectedCourses.map((course) => ({
+      course_code:  course.code,
+      course_title: course.title,
+      section:      null,
+      credit_hours: course.credits,
+    })),
+  }
 }
 
 /* -------------------------------------------------------
@@ -341,6 +377,7 @@ function StudentForm() {
   const [validationErrors, setValidationErrors]   = useState([])
   const [statusMessage, setStatusMessage]         = useState('')
   const [statusType, setStatusType]               = useState('')
+  const [submitting, setSubmitting]               = useState(false)
 
   const selectedCourses = courseOptions.filter((course) =>
     selectedCourseIds.includes(course.id)
@@ -384,7 +421,7 @@ function StudentForm() {
     setStatusMessage('Draft saved successfully.')
   }
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault()
 
     // Run all validation checks before doing anything else
@@ -396,7 +433,7 @@ function StudentForm() {
       isConfirmed
     )
 
-    // If there are any errors, show them and stop — do not save to localStorage
+    // If there are any errors, show them and stop — do not call the backend
     if (errors.length > 0) {
       setValidationErrors(errors)
       setStatusMessage('')
@@ -404,37 +441,27 @@ function StudentForm() {
       return
     }
 
-    // All checks passed — clear errors and proceed
+    // All checks passed — clear errors and submit to the backend.
+    // The backend has the final say (duplicate term, credit minimum, etc.)
     setValidationErrors([])
+    setStatusMessage('')
+    setStatusType('')
+    setSubmitting(true)
 
-    const registrationData = {
-      ...formData,
-      selectedCourses,
-      uploadedDocuments: Object.entries(documentUploads).map(([id, file]) => ({
-        documentId: id,
-        fileName:   file.name,
-      })),
-      totalCreditHours,
-      submittedAt:   new Date().toISOString(),
-      // Each new submission starts with all clearances in Pending state
-      clearances:    getDefaultClearances(),
-      overallStatus: calculateOverallStatus(getDefaultClearances()),
-    }
-
-    // Save to localStorage so the Admin Dashboard and Student Portal can display this submission
     try {
-      const existing = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')
-      existing.push(registrationData)
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(existing))
-    } catch {
-      // localStorage may be unavailable in some browser contexts
+      const application = await createApplication(buildApplicationPayload(formData, selectedCourses))
+      setStatusType('success')
+      setStatusMessage(
+        `Registration submitted successfully. Application ${application.application_number} ` +
+        `is now ${application.overall_status.replace(/_/g, ' ')} — next step: ` +
+        `${(application.current_step || 'complete').replace(/_/g, ' ')}.`
+      )
+    } catch (err) {
+      setStatusType('error')
+      setStatusMessage(err.message || 'Something went wrong while submitting your registration.')
+    } finally {
+      setSubmitting(false)
     }
-
-    console.log('Submitted registration:', registrationData)
-    setStatusType('success')
-    setStatusMessage(
-      'Registration submitted successfully. Your application is ready for registrar review.'
-    )
   }
 
   return (
@@ -643,11 +670,12 @@ function StudentForm() {
             type="button"
             className="btn btn--outline"
             onClick={handleSaveDraft}
+            disabled={submitting}
           >
             Save Draft
           </button>
-          <button type="submit" className="btn btn--primary">
-            Submit Registration
+          <button type="submit" className="btn btn--primary" disabled={submitting}>
+            {submitting ? 'Submitting…' : 'Submit Registration'}
           </button>
         </div>
       </section>

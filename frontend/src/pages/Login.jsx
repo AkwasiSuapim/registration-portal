@@ -1,13 +1,14 @@
 import { useState } from 'react'
 import {
-  OFFICE_ROLES,
-  isValidStudentEmail,
   isValidStaffEmail,
   isEduStudentIdentifier,
 } from '../utils/registrationWorkflow'
+import { login } from '../services/api'
 
-// This is frontend-only login simulation for the prototype.
-// Real authentication will be handled by the backend later.
+// Login calls the real backend (POST /auth/login). The access type
+// tabs below only decide which fields to show — the backend response
+// (account_type / role_key) is what actually determines where the
+// user is routed and what they're allowed to do.
 
 /* -------------------------------------------------------
    Reusable form field — reuses existing .form-field styles
@@ -57,9 +58,10 @@ function validateStudentForm(identifier, password) {
 
 /* -------------------------------------------------------
    validateOfficialForm — returns an array of error strings.
-   Officials log in with their staff email, password, and office role.
+   Officials log in with their staff email and password. Their office
+   role is determined by the backend, not chosen here.
 ------------------------------------------------------- */
-function validateOfficialForm(staffEmail, password, officeRole) {
+function validateOfficialForm(staffEmail, password) {
   const errs = []
 
   if (!staffEmail.trim()) {
@@ -70,10 +72,6 @@ function validateOfficialForm(staffEmail, password, officeRole) {
 
   if (!password.trim()) {
     errs.push('Password is required.')
-  }
-
-  if (!officeRole) {
-    errs.push('Please select an Office Role.')
   }
 
   return errs
@@ -87,9 +85,10 @@ function Login({ onNavigate, onLogin }) {
   const [accessType, setAccessType] = useState('')
 
   const [studentForm, setStudentForm]   = useState({ identifier: '', password: '' })
-  const [officialForm, setOfficialForm] = useState({ staffEmail: '', password: '', officeRole: '' })
+  const [officialForm, setOfficialForm] = useState({ staffEmail: '', password: '' })
 
-  const [errors, setErrors] = useState([])
+  const [errors, setErrors]         = useState([])
+  const [loggingIn, setLoggingIn]   = useState(false)
 
   const handleAccessTypeChange = (type) => {
     setAccessType(type)
@@ -106,50 +105,41 @@ function Login({ onNavigate, onLogin }) {
     setOfficialForm((prev) => ({ ...prev, [name]: value }))
   }
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!accessType) {
       setErrors(['Please select an access type to continue.'])
       return
     }
 
+    let identifier
+    let password
+
     if (accessType === 'student') {
       const errs = validateStudentForm(studentForm.identifier, studentForm.password)
       if (errs.length > 0) { setErrors(errs); return }
-
-      // Determine whether the student used an ID or email so the
-      // Student Portal can match their application correctly
-      const usedEmail = isValidStudentEmail(studentForm.identifier)
-      const session = {
-        userType:    'student',
-        loginMethod: usedEmail ? 'email' : 'studentId',
-        studentId:   usedEmail ? '' : studentForm.identifier.trim(),
-        email:       usedEmail ? studentForm.identifier.trim() : '',
-      }
-      localStorage.setItem('portalUserSession', JSON.stringify(session))
-      onLogin(session)
-      onNavigate('student-portal')
-      return
+      identifier = studentForm.identifier.trim()
+      password   = studentForm.password
+    } else {
+      const errs = validateOfficialForm(officialForm.staffEmail, officialForm.password)
+      if (errs.length > 0) { setErrors(errs); return }
+      identifier = officialForm.staffEmail.trim()
+      password   = officialForm.password
     }
 
-    // Official login
-    const errs = validateOfficialForm(
-      officialForm.staffEmail,
-      officialForm.password,
-      officialForm.officeRole,
-    )
-    if (errs.length > 0) { setErrors(errs); return }
+    setErrors([])
+    setLoggingIn(true)
 
-    // 'role' is stored alongside 'officeRole' for backward compatibility
-    // with AdminDashboard's session reading until Phase 4 updates it.
-    const session = {
-      userType:   'official',
-      staffEmail: officialForm.staffEmail.trim(),
-      officeRole: officialForm.officeRole,
-      role:       officialForm.officeRole,
+    try {
+      // The backend response — not the tab the user picked — decides
+      // who this account actually is and where it should go.
+      const user = await login(identifier, password)
+      onLogin(user)
+      onNavigate(user.account_type === 'student' ? 'student-portal' : 'admin')
+    } catch (err) {
+      setErrors([err.message || 'Login failed. Please try again.'])
+    } finally {
+      setLoggingIn(false)
     }
-    localStorage.setItem('portalUserSession', JSON.stringify(session))
-    onLogin(session)
-    onNavigate('admin')
   }
 
   return (
@@ -243,20 +233,9 @@ function Login({ onNavigate, onLogin }) {
                 placeholder="Enter your password"
                 onChange={handleOfficialChange}
               />
-              <label className="form-field">
-                <span className="form-field__label">Office Role</span>
-                <select
-                  className="form-field__control"
-                  name="officeRole"
-                  value={officialForm.officeRole}
-                  onChange={handleOfficialChange}
-                >
-                  <option value="">Select your office role</option>
-                  {OFFICE_ROLES.map((role) => (
-                    <option key={role} value={role}>{role}</option>
-                  ))}
-                </select>
-              </label>
+              <p className="login-step-hint">
+                Your office role is determined automatically after login.
+              </p>
             </div>
           )}
 
@@ -275,10 +254,13 @@ function Login({ onNavigate, onLogin }) {
               type="button"
               className="btn btn--primary login-card__submit"
               onClick={handleLogin}
+              disabled={loggingIn}
             >
-              {accessType === 'student'
-                ? 'Continue to Student Portal'
-                : 'Continue to Admin Dashboard'}
+              {loggingIn
+                ? 'Logging in…'
+                : accessType === 'student'
+                  ? 'Continue to Student Portal'
+                  : 'Continue to Admin Dashboard'}
             </button>
           )}
 

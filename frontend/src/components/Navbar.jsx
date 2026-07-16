@@ -1,3 +1,5 @@
+import NotificationBell from './NotificationBell'
+
 // Nav items that always appear in the centre of the navbar.
 // The Register item gets a blue pill style via navbar__button--register.
 const navItems = [
@@ -16,13 +18,10 @@ function GraduationCapIcon() {
 }
 
 function Navbar({ currentPage, onNavigate, currentSession, onLogout }) {
-  // Build a human-readable label for the session indicator in the navbar.
-  // Students show as "Student", officials show their office role name.
-  const sessionLabel = currentSession
-    ? currentSession.userType === 'student'
-      ? 'Student'
-      : currentSession.officeRole
-    : null
+  // role_name comes straight from the backend (GET /auth/me / login
+  // response) — "Student" for students, the office name for officials,
+  // "System Admin" for admins. No frontend guessing involved.
+  const sessionLabel = currentSession?.role_name || null
 
   return (
     <nav className="navbar">
@@ -64,6 +63,7 @@ function Navbar({ currentPage, onNavigate, currentSession, onLogout }) {
       <div className="navbar__session-area">
         {currentSession ? (
           <>
+            <NotificationBell />
             <span className="navbar__session-label">
               Logged in as: <strong>{sessionLabel}</strong>
             </span>

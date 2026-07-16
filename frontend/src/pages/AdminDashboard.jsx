@@ -1,12 +1,10 @@
-import { useState, useEffect } from 'react'
-import {
-  CLEARANCE_KEYS,
-  getClearanceLabel,
-  getAllowedClearanceKey,
-  calculateOverallStatus,
-  loadApplications,
-  saveApplications,
-} from '../utils/registrationWorkflow'
+import { useState, useEffect, useCallback } from 'react'
+import { getOfficialQueue, getApplicationReview, updateClearance, getApplicationActivity } from '../services/api'
+import { formatOverallStatus, formatClearanceStatus, getOwnClearanceKey } from '../utils/backendLabels'
+import { getClearanceLabel, getAllowedClearanceKey } from '../utils/registrationWorkflow'
+import StatusBadge from '../components/StatusBadge'
+import DocumentList from '../components/DocumentList'
+import ActivityTimeline from '../components/ActivityTimeline'
 
 /* -------------------------------------------------------
    Helper — format ISO timestamp for display
@@ -20,83 +18,67 @@ function formatDate(isoString) {
 }
 
 /* -------------------------------------------------------
-   Helper — derive a short Application ID from submittedAt
-------------------------------------------------------- */
-function formatApplicationId(submittedAt) {
-  if (!submittedAt) return 'APP-DRAFT'
-  const date = submittedAt.slice(0, 10).replace(/-/g, '')
-  const time = submittedAt.slice(11, 16).replace(':', '')
-  return `APP-${date}-${time}`
-}
-
-/* -------------------------------------------------------
-   Helper — CSS slug for a status string
-   "Correction Required" → "correction-required"
-------------------------------------------------------- */
-function statusSlug(status) {
-  if (!status) return 'pending'
-  return status.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z-]/g, '')
-}
-
-/* -------------------------------------------------------
-   StatusBadge — coloured pill for any status value
-------------------------------------------------------- */
-function StatusBadge({ status }) {
-  const display = status || 'Pending'
-  return (
-    <span className={`status-badge status-badge--${statusSlug(display)}`}>
-      {display}
-    </span>
-  )
-}
-
-/* -------------------------------------------------------
    RoleBanner — shows the active office role at the top.
    Logout is handled by the Navbar; no secondary logout here.
 ------------------------------------------------------- */
 function RoleBanner({ officeRole }) {
-  const clearanceLabel = getClearanceLabel(getAllowedClearanceKey(officeRole))
+  const allowedKey = getAllowedClearanceKey(officeRole)
+  const clearanceLabel = allowedKey ? getClearanceLabel(allowedKey) : null
   return (
     <div className="role-banner">
       <div className="role-banner__info">
         <span className="role-banner__label">Logged in as</span>
         <span className="role-banner__role">{officeRole}</span>
-        <span className="role-banner__owns">
-          Managing: <strong>{clearanceLabel}</strong>
-        </span>
+        {clearanceLabel && (
+          <span className="role-banner__owns">
+            Managing: <strong>{clearanceLabel}</strong>
+          </span>
+        )}
       </div>
     </div>
   )
 }
 
 /* -------------------------------------------------------
-   SummaryCard — one stat card for the dashboard header
+   ClearanceActionBlock — one clearance in the review panel.
+   Only the office that owns this clearance_key sees action buttons;
+   every other office sees the same block read-only.
 ------------------------------------------------------- */
-function SummaryCard({ label, count, variant }) {
-  return (
-    <div className={`summary-card summary-card--${variant}`}>
-      <span className="summary-card__count">{count}</span>
-      <span className="summary-card__label">{label}</span>
-    </div>
-  )
-}
+function ClearanceActionBlock({ clearance, canAct, isPublicSafety, onSubmitAction }) {
+  const [message, setMessage]         = useState('')
+  const [submitting, setSubmitting]   = useState(false)
+  const [actionError, setActionError] = useState('')
 
-/* -------------------------------------------------------
-   ClearanceSection — renders one clearance block.
-   Only the logged-in official's assigned section shows action buttons.
-   All other sections are shown as view-only.
-------------------------------------------------------- */
-function ClearanceSection({ clearanceKey, clearance, isAssigned, reviewMessage, onMessageChange, onAction }) {
-  const label  = getClearanceLabel(clearanceKey)
-  const status = clearance?.status || 'Pending'
-  const canAct = isAssigned
+  const displayStatus = formatClearanceStatus(clearance.status)
+  const showActions   = canAct && clearance.availability === 'ready'
+
+  const handleAction = async (action) => {
+    if ((action === 'request_correction' || action === 'reject') && !message.trim()) {
+      setActionError('Please enter a message explaining why.')
+      return
+    }
+
+    setSubmitting(true)
+    setActionError('')
+
+    try {
+      await onSubmitAction(clearance.id, action, message.trim() || null)
+      setMessage('')
+    } catch (err) {
+      // Backend is authoritative here — surface its message verbatim
+      // (wrong office = 403, locked clearance = 409, missing message = 422, etc).
+      setActionError(err.message || 'Could not update this clearance.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
 
   return (
-    <div className={`clearance-section${canAct ? ' clearance-section--assigned' : ' clearance-section--readonly'}`}>
+    <div className={`clearance-section${showActions ? ' clearance-section--assigned' : ' clearance-section--readonly'}`}>
       <div className="clearance-section__header">
         <div className="clearance-section__title-row">
-          <span className="clearance-section__label">{label}</span>
-          <StatusBadge status={status} />
+          <span className="clearance-section__label">{clearance.clearance_label}</span>
+          <StatusBadge status={displayStatus} />
         </div>
         {!canAct && (
           <span className="clearance-section__viewonly">
@@ -105,82 +87,66 @@ function ClearanceSection({ clearanceKey, clearance, isAssigned, reviewMessage, 
         )}
       </div>
 
-      {/* Show reviewer info if this clearance has been acted on */}
-      {clearance?.reviewedBy && (
+      {clearance.reviewed_at && (
         <div className="clearance-section__meta">
-          <span>Reviewed by: <strong>{clearance.reviewedBy}</strong></span>
-          <span>on {formatDate(clearance.reviewedAt)}</span>
+          <span>Reviewed on {formatDate(clearance.reviewed_at)}</span>
         </div>
       )}
 
-      {/* Show any message left by the reviewing office */}
-      {clearance?.message && (
+      {/* Why a locked clearance can't be acted on — shown even to the owning office */}
+      {clearance.availability === 'locked' && clearance.blocked_reason && (
+        <p className="clearance-section__message">{clearance.blocked_reason}</p>
+      )}
+
+      {clearance.message && (
         <p className="clearance-section__message">{clearance.message}</p>
       )}
 
-      {/* Action area — only shown for the assigned clearance */}
-      {canAct && (
+      {showActions && (
         <div className="clearance-section__actions">
-
-          {/* Contextual note for offices with specific instructions */}
-          {clearanceKey === 'registrarCheckIn' && (
-            <p className="clearance-section__office-note">
-              The Welcome Desk / Registrar clearance confirms the student is
-              recognized and ready to begin registration validation.
-            </p>
-          )}
-          {clearanceKey === 'successCenter' && (
-            <p className="clearance-section__office-note">
-              Success Center clearance confirms course registration and minimum
-              15-credit-hour requirement.
-            </p>
-          )}
-          {clearanceKey === 'publicSafety' && (
-            <p className="clearance-section__office-note">
-              This step may require an in-person visit for student photo ID processing.
-            </p>
-          )}
-
           <textarea
             className="clearance-section__textarea"
-            placeholder="Optional message (shown to the student and other reviewers)…"
-            value={reviewMessage}
-            onChange={(e) => onMessageChange(e.target.value)}
+            placeholder="Message (required for Request Correction / Reject — shown to the student)…"
+            value={message}
+            onChange={(event) => setMessage(event.target.value)}
             rows={3}
+            disabled={submitting}
           />
+
+          {actionError && <p className="clearance-section__error">{actionError}</p>}
 
           <div className="clearance-section__buttons">
             <button
               type="button"
               className="status-action-btn status-action-btn--approved"
-              disabled={status === 'Approved'}
-              onClick={() => onAction(clearanceKey, 'Approved')}
+              disabled={submitting}
+              onClick={() => handleAction('approve')}
             >
               Approve
             </button>
             <button
               type="button"
               className="status-action-btn status-action-btn--correction-required"
-              disabled={status === 'Correction Required'}
-              onClick={() => onAction(clearanceKey, 'Correction Required')}
+              disabled={submitting}
+              onClick={() => handleAction('request_correction')}
             >
               Request Correction
             </button>
             <button
               type="button"
               className="status-action-btn status-action-btn--rejected"
-              disabled={status === 'Rejected'}
-              onClick={() => onAction(clearanceKey, 'Rejected')}
+              disabled={submitting}
+              onClick={() => handleAction('reject')}
             >
               Reject
             </button>
-            {/* Public Safety can also flag that an in-person visit is needed */}
-            {clearanceKey === 'publicSafety' && (
+            {/* Only Public Safety can flag that an in-person visit is needed */}
+            {isPublicSafety && (
               <button
                 type="button"
                 className="status-action-btn status-action-btn--in-person-required"
-                disabled={status === 'In-Person Required'}
-                onClick={() => onAction(clearanceKey, 'In-Person Required')}
+                disabled={submitting}
+                onClick={() => handleAction('mark_in_person_required')}
               >
                 Mark In-Person Required
               </button>
@@ -193,32 +159,83 @@ function ClearanceSection({ clearanceKey, clearance, isAssigned, reviewMessage, 
 }
 
 /* -------------------------------------------------------
-   ApplicationDetail — full review panel for one application
+   ReviewActivity — fetches GET /applications/{id}/activity
+   for the review panel, toggled on demand.
 ------------------------------------------------------- */
-function ApplicationDetail({ application, officeRole, onClose, onClearanceUpdate }) {
-  const [reviewMessage, setReviewMessage] = useState('')
+function ReviewActivity({ applicationId }) {
+  const [loading, setLoading]   = useState(true)
+  const [error, setError]       = useState('')
+  const [activity, setActivity] = useState([])
 
-  // The clearance key this logged-in official is allowed to update
-  const allowedClearanceKey = getAllowedClearanceKey(officeRole)
+  useEffect(() => {
+    let cancelled = false
+    setLoading(true)
+    setError('')
+
+    getApplicationActivity(applicationId)
+      .then((result) => { if (!cancelled) setActivity(result.activity) })
+      .catch((err) => { if (!cancelled) setError(err.message) })
+      .finally(() => { if (!cancelled) setLoading(false) })
+
+    return () => { cancelled = true }
+  }, [applicationId])
+
+  if (loading) return <p className="app-detail__empty">Loading activity…</p>
+  if (error) return <p className="app-detail__empty">{error}</p>
+  return <ActivityTimeline activity={activity} />
+}
+
+/* -------------------------------------------------------
+   ReviewPanel — full review for one application
+   (GET /applications/{id}/review), shown when a queue row is opened.
+------------------------------------------------------- */
+function ReviewPanel({ applicationId, ownClearanceKey, isPublicSafety, onClose, onQueueChanged }) {
+  const [loading, setLoading]         = useState(true)
+  const [error, setError]             = useState('')
+  const [review, setReview]           = useState(null)
+  const [showActivity, setShowActivity] = useState(false)
+
+  const loadReview = useCallback(() => {
+    setLoading(true)
+    setError('')
+    getApplicationReview(applicationId)
+      .then(setReview)
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false))
+  }, [applicationId])
+
+  useEffect(() => { loadReview() }, [loadReview])
+
+  // Only refreshes on success — a thrown ApiError propagates back up to
+  // the clearance block that called this, so it can show its own error.
+  const handleClearanceAction = async (clearanceId, action, message) => {
+    await updateClearance(clearanceId, { action, message })
+    loadReview()
+    onQueueChanged()
+  }
+
+  if (loading) {
+    return (
+      <div className="app-detail">
+        <p className="app-detail__empty">Loading application review…</p>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="app-detail">
+        <p className="app-detail__empty">{error}</p>
+        <button type="button" className="btn btn--outline" onClick={onClose}>Close</button>
+      </div>
+    )
+  }
 
   const {
-    fullName, studentId, email, phone,
-    classification, registrationTerm, major, minor,
-    address, city, state, zipCode,
-    emergencyContactName, emergencyRelationship, emergencyContactPhone,
-    selectedCourses   = [],
-    uploadedDocuments = [],
-    totalCreditHours  = 0,
-    submittedAt,
-    clearances        = {},
-    overallStatus,
-  } = application
-
-  // When the official clicks Approve / Request Correction / Reject
-  const handleAction = (clearanceKey, newStatus) => {
-    onClearanceUpdate(application.submittedAt, clearanceKey, newStatus, reviewMessage)
-    setReviewMessage('')
-  }
+    id, application_number, term_code, academic_year, major, classification,
+    housing_required, overall_status, submitted_at, total_credit_hours,
+    student, courses = [], clearances = [], documents = [],
+  } = review
 
   return (
     <div className="app-detail">
@@ -226,11 +243,11 @@ function ApplicationDetail({ application, officeRole, onClose, onClearanceUpdate
       {/* Panel header */}
       <div className="app-detail__header">
         <div className="app-detail__header-info">
-          <p className="app-detail__app-id">{formatApplicationId(submittedAt)}</p>
-          <h2 className="app-detail__student-name">{fullName || '—'}</h2>
+          <p className="app-detail__app-id">{application_number}</p>
+          <h2 className="app-detail__student-name">{student.first_name} {student.last_name}</h2>
           <div className="app-detail__overall-status">
             <span className="app-detail__overall-label">Overall Status:</span>
-            <StatusBadge status={overallStatus} />
+            <StatusBadge status={formatOverallStatus(overall_status)} />
           </div>
         </div>
         <button type="button" className="btn btn--outline" onClick={onClose}>
@@ -238,59 +255,43 @@ function ApplicationDetail({ application, officeRole, onClose, onClearanceUpdate
         </button>
       </div>
 
-      {/* Student information */}
+      {/* Student & application information */}
       <section className="app-detail__section">
         <h3 className="app-detail__section-title">Student Information</h3>
         <div className="app-detail__grid">
           <div className="app-detail__field">
-            <span className="app-detail__label">Application ID</span>
-            <span className="app-detail__value">{formatApplicationId(submittedAt)}</span>
-          </div>
-          <div className="app-detail__field">
-            <span className="app-detail__label">Student ID</span>
-            <span className="app-detail__value">{studentId || '—'}</span>
+            <span className="app-detail__label">Student Number</span>
+            <span className="app-detail__value">{student.student_no}</span>
           </div>
           <div className="app-detail__field">
             <span className="app-detail__label">College Email</span>
-            <span className="app-detail__value">{email || '—'}</span>
+            <span className="app-detail__value">{student.livingstone_email}</span>
           </div>
           <div className="app-detail__field">
-            <span className="app-detail__label">Phone</span>
-            <span className="app-detail__value">{phone || '—'}</span>
+            <span className="app-detail__label">Residency</span>
+            <span className="app-detail__value">
+              {student.residency_type === 'residential' ? 'Residential' : 'Commuter'}
+            </span>
           </div>
           <div className="app-detail__field">
-            <span className="app-detail__label">Classification</span>
-            <span className="app-detail__value">{classification || '—'}</span>
-          </div>
-          <div className="app-detail__field">
-            <span className="app-detail__label">Enrollment Term</span>
-            <span className="app-detail__value">{registrationTerm || '—'}</span>
+            <span className="app-detail__label">Term</span>
+            <span className="app-detail__value">{term_code} ({academic_year})</span>
           </div>
           <div className="app-detail__field">
             <span className="app-detail__label">Major</span>
             <span className="app-detail__value">{major || '—'}</span>
           </div>
           <div className="app-detail__field">
-            <span className="app-detail__label">Minor</span>
-            <span className="app-detail__value">{minor || '—'}</span>
+            <span className="app-detail__label">Classification</span>
+            <span className="app-detail__value">{classification || '—'}</span>
           </div>
           <div className="app-detail__field">
-            <span className="app-detail__label">Mailing Address</span>
-            <span className="app-detail__value">
-              {[address, city, state, zipCode].filter(Boolean).join(', ') || '—'}
-            </span>
-          </div>
-          <div className="app-detail__field">
-            <span className="app-detail__label">Emergency Contact</span>
-            <span className="app-detail__value">
-              {emergencyContactName
-                ? `${emergencyContactName} (${emergencyRelationship}) — ${emergencyContactPhone}`
-                : '—'}
-            </span>
+            <span className="app-detail__label">Housing Required</span>
+            <span className="app-detail__value">{housing_required ? 'Yes' : 'No'}</span>
           </div>
           <div className="app-detail__field">
             <span className="app-detail__label">Submitted At</span>
-            <span className="app-detail__value">{formatDate(submittedAt)}</span>
+            <span className="app-detail__value">{formatDate(submitted_at)}</span>
           </div>
         </div>
       </section>
@@ -299,149 +300,117 @@ function ApplicationDetail({ application, officeRole, onClose, onClearanceUpdate
       <section className="app-detail__section">
         <h3 className="app-detail__section-title">
           Selected Courses
-          {totalCreditHours > 0 && (
-            <span className="app-detail__credit-badge">{totalCreditHours} credit hours</span>
+          {total_credit_hours > 0 && (
+            <span className="app-detail__credit-badge">{total_credit_hours} credit hours</span>
           )}
         </h3>
-        {selectedCourses.length === 0 ? (
+        {courses.length === 0 ? (
           <p className="app-detail__empty">No courses on record.</p>
         ) : (
           <div className="app-detail__course-list">
             <div className="app-detail__course-header">
-              <span>Code</span><span>Title</span><span>Credits</span><span>Schedule</span>
+              <span>Code</span><span>Title</span><span>Credits</span><span>Section</span>
             </div>
-            {selectedCourses.map((course) => (
+            {courses.map((course) => (
               <div key={course.id} className="app-detail__course-row">
-                <span className="app-detail__course-code">{course.code}</span>
-                <span className="app-detail__course-title">{course.title}</span>
-                <span className="app-detail__course-credits">{course.credits}</span>
-                <span className="app-detail__course-schedule">{course.schedule}</span>
+                <span className="app-detail__course-code">{course.course_code}</span>
+                <span className="app-detail__course-title">{course.course_title}</span>
+                <span className="app-detail__course-credits">{course.credit_hours}</span>
+                <span className="app-detail__course-schedule">{course.section || '—'}</span>
               </div>
             ))}
           </div>
         )}
       </section>
 
-      {/* Uploaded documents */}
+      {/* Uploaded documents — view/download only, officials never upload */}
       <section className="app-detail__section">
         <h3 className="app-detail__section-title">Uploaded Documents</h3>
-        {uploadedDocuments.length === 0 ? (
-          <p className="app-detail__empty">No documents on record.</p>
-        ) : (
-          <div className="app-detail__doc-list">
-            {uploadedDocuments.map(({ documentId, fileName }) => (
-              <div key={documentId} className="app-detail__doc-row">
-                <svg className="app-detail__doc-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                  <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
-                </svg>
-                <div className="app-detail__doc-text">
-                  <span className="app-detail__doc-name">{documentId}</span>
-                  <span className="app-detail__doc-filename">{fileName}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+        <DocumentList documents={documents} />
       </section>
 
       {/* Clearance sections — one block per office */}
       <section className="app-detail__section">
         <h3 className="app-detail__section-title">Office Clearances</h3>
         <div className="clearance-list">
-          {CLEARANCE_KEYS.map((key) => (
-            <ClearanceSection
-              key={key}
-              clearanceKey={key}
-              clearance={clearances[key]}
-              isAssigned={key === allowedClearanceKey}
-              reviewMessage={reviewMessage}
-              onMessageChange={setReviewMessage}
-              onAction={handleAction}
+          {clearances.map((clearance) => (
+            <ClearanceActionBlock
+              key={clearance.id}
+              clearance={clearance}
+              canAct={clearance.clearance_key === ownClearanceKey}
+              isPublicSafety={isPublicSafety}
+              onSubmitAction={handleClearanceAction}
             />
           ))}
         </div>
+      </section>
+
+      {/* Activity timeline — fetched on demand */}
+      <section className="app-detail__section">
+        <button
+          type="button"
+          className="btn btn--outline"
+          onClick={() => setShowActivity((prev) => !prev)}
+        >
+          {showActivity ? 'Hide Activity' : 'View Activity'}
+        </button>
+        {showActivity && <ReviewActivity applicationId={id} />}
       </section>
 
     </div>
   )
 }
 
+const QUEUE_FILTERS = [
+  { value: 'all',       label: 'All' },
+  { value: 'ready',     label: 'Ready' },
+  { value: 'locked',    label: 'Locked' },
+  { value: 'completed', label: 'Completed' },
+]
+
 /* -------------------------------------------------------
    AdminDashboard — main page component
+
+   Office identity comes from the backend session (App.jsx), and the
+   queue itself is already scoped server-side to the caller's own
+   office — this page never fetches or shows another office's queue.
 ------------------------------------------------------- */
-function AdminDashboard({ onNavigate }) {
-  const [applications, setApplications]           = useState([])
-  const [selectedApplication, setSelectedApplication] = useState(null)
-  const [officeRole, setOfficeRole]               = useState(null)
+function AdminDashboard({ onNavigate, currentSession }) {
+  const [queue, setQueue]                             = useState([])
+  const [queueLoading, setQueueLoading]                 = useState(true)
+  const [queueError, setQueueError]                   = useState('')
+  const [filter, setFilter]                           = useState('all')
+  const [selectedApplicationId, setSelectedApplicationId] = useState(null)
 
-  // Load applications and restore session on mount
-  useEffect(() => {
-    const apps = loadApplications()
-    setApplications(apps)
+  const officeRole      = currentSession?.role_name || null
+  const ownClearanceKey = getOwnClearanceKey(currentSession?.role_key)
+  const isPublicSafety  = currentSession?.role_key === 'public_safety'
+  const isAdmin         = currentSession?.account_type === 'admin'
 
-    const session = JSON.parse(localStorage.getItem('portalUserSession') || 'null')
-    if (session?.role) setOfficeRole(session.role)
-  }, [])
+  // GET /officials/me/queue is official-only — a system_admin account
+  // gets a 403 (not an empty list) if it calls this, so admins simply
+  // never make the request and see an explanatory message instead.
+  const loadQueue = useCallback(() => {
+    if (isAdmin) {
+      setQueueLoading(false)
+      return
+    }
+    setQueueLoading(true)
+    setQueueError('')
+    getOfficialQueue(filter === 'all' ? undefined : { availability: filter })
+      .then(setQueue)
+      .catch((err) => setQueueError(err.message))
+      .finally(() => setQueueLoading(false))
+  }, [filter, isAdmin])
 
-  /* ── Application selection ── */
+  useEffect(() => { loadQueue() }, [loadQueue])
 
-  const handleViewDetails = (application) => {
-    setSelectedApplication(application)
+  const handleReview = (applicationId) => {
+    setSelectedApplicationId(applicationId)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  const handleCloseDetails = () => {
-    setSelectedApplication(null)
-  }
-
-  /* ── Clearance update ── */
-
-  // Each office can only update the clearance assigned to its role.
-  const updateClearanceStatus = (submittedAt, clearanceKey, newStatus, message) => {
-    const now = new Date().toISOString()
-
-    const updated = applications.map((app) => {
-      if (app.submittedAt !== submittedAt) return app
-
-      const updatedClearances = {
-        ...app.clearances,
-        [clearanceKey]: {
-          ...app.clearances[clearanceKey],
-          status:     newStatus,
-          message:    message || '',
-          reviewedBy: officeRole,
-          reviewedAt: now,
-        },
-      }
-
-      return {
-        ...app,
-        clearances:    updatedClearances,
-        overallStatus: calculateOverallStatus(updatedClearances),
-      }
-    })
-
-    setApplications(updated)
-    saveApplications(updated)
-
-    // Keep the detail panel open, reflecting the updated data
-    const refreshed = updated.find((app) => app.submittedAt === submittedAt)
-    setSelectedApplication(refreshed || null)
-  }
-
-  /* ── Summary counts ── */
-
-  const totalCount      = applications.length
-  const inProgressCount = applications.filter((a) => a.overallStatus === 'In Progress').length
-  const correctionCount = applications.filter((a) => a.overallStatus === 'Correction Required').length
-  const registeredCount = applications.filter((a) => a.overallStatus === 'Fully Registered').length
-  const rejectedCount   = applications.filter((a) => a.overallStatus === 'Rejected').length
-  const inPersonCount   = applications.filter((a) => a.overallStatus === 'In-Person Required').length
-
-  /* ── Render ── */
-
-  // Brief loading state while the useEffect reads the session.
-  // App.jsx already guards this route — if we reach here, an official session exists.
+  // Brief loading gate — App.jsx already guards this route.
   if (!officeRole) return null
 
   return (
@@ -464,43 +433,64 @@ function AdminDashboard({ onNavigate }) {
       {/* Role banner — shows which office is currently logged in */}
       <RoleBanner officeRole={officeRole} />
 
-      {/* Summary cards */}
-      <div className="summary-cards">
-        <SummaryCard label="Total"              count={totalCount}      variant="total"       />
-        <SummaryCard label="In Progress"        count={inProgressCount} variant="in-progress" />
-        <SummaryCard label="Correction Required" count={correctionCount} variant="correction"  />
-        <SummaryCard label="Fully Registered"   count={registeredCount} variant="registered"  />
-        <SummaryCard label="Rejected"           count={rejectedCount}   variant="rejected"    />
-        <SummaryCard label="In-Person Required" count={inPersonCount}   variant="in-person"   />
-      </div>
-
-      {/* Application detail panel — shown when a row is selected */}
-      {selectedApplication && (
-        <ApplicationDetail
-          application={selectedApplication}
-          officeRole={officeRole}
-          onClose={handleCloseDetails}
-          onClearanceUpdate={updateClearanceStatus}
+      {/* Application review panel — shown when a queue row is opened */}
+      {selectedApplicationId && (
+        <ReviewPanel
+          applicationId={selectedApplicationId}
+          ownClearanceKey={ownClearanceKey}
+          isPublicSafety={isPublicSafety}
+          onClose={() => setSelectedApplicationId(null)}
+          onQueueChanged={loadQueue}
         />
       )}
 
-      {/* Applications table */}
+      {/* Office queue — system_admin accounts don't have one (see loadQueue) */}
       <section className="applications-section">
         <div className="applications-section__heading-row">
-          <h2 className="applications-section__heading">Submitted Applications</h2>
-          <span className="applications-section__count">
-            {totalCount} {totalCount === 1 ? 'record' : 'records'}
-          </span>
+          <h2 className="applications-section__heading">
+            {isAdmin ? 'Office Queue' : `${officeRole} Queue`}
+          </h2>
+          {!isAdmin && (
+            <span className="applications-section__count">
+              {queue.length} {queue.length === 1 ? 'item' : 'items'}
+            </span>
+          )}
         </div>
 
-        {applications.length === 0 ? (
+        {!isAdmin && (
+          <div className="queue-filter-tabs">
+            {QUEUE_FILTERS.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                className={`queue-filter-tab${filter === option.value ? ' queue-filter-tab--active' : ''}`}
+                onClick={() => setFilter(option.value)}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {queueLoading ? (
+          <p className="portal-loading">Loading your queue…</p>
+        ) : queueError ? (
+          <div className="admin-empty">
+            <p className="admin-empty__text">We couldn't load your queue.</p>
+            <p className="admin-empty__hint">{queueError}</p>
+            <button type="button" className="btn btn--primary" onClick={loadQueue}>
+              Try Again
+            </button>
+          </div>
+        ) : queue.length === 0 ? (
           <div className="admin-empty">
             <svg className="admin-empty__icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
               <path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z" />
             </svg>
-            <p className="admin-empty__text">No applications submitted yet.</p>
-            <p className="admin-empty__hint">
-              Students who complete the registration form will appear here.
+            <p className="admin-empty__text">
+              {isAdmin
+                ? "System Admin accounts don't have an office queue — office staff review applications directly."
+                : 'No applications in your queue right now.'}
             </p>
           </div>
         ) : (
@@ -508,40 +498,54 @@ function AdminDashboard({ onNavigate }) {
             <table className="applications-table">
               <thead>
                 <tr>
-                  <th>App ID</th>
-                  <th>Student Name</th>
-                  <th>Student ID</th>
-                  <th>Major</th>
-                  <th>Enrollment Term</th>
-                  <th>Total Credits</th>
+                  <th>App #</th>
+                  <th>Student</th>
+                  <th>Term</th>
+                  <th>Program</th>
+                  <th>Housing</th>
                   <th>Overall Status</th>
-                  <th>Submitted At</th>
+                  <th>Clearance Status</th>
+                  <th>Submitted</th>
                   <th>Action</th>
                 </tr>
               </thead>
               <tbody>
-                {applications.map((app, index) => {
-                  const isSelected = selectedApplication?.submittedAt === app.submittedAt
+                {queue.map((item) => {
+                  const isSelected = selectedApplicationId === item.application_id
                   return (
                     <tr
-                      key={app.submittedAt || index}
+                      key={item.clearance_id}
                       className={isSelected ? 'applications-table__row--selected' : ''}
                     >
-                      <td className="table-app-id">{formatApplicationId(app.submittedAt)}</td>
-                      <td>{app.fullName || '—'}</td>
-                      <td>{app.studentId || '—'}</td>
-                      <td>{app.major || '—'}</td>
-                      <td>{app.registrationTerm || '—'}</td>
-                      <td className="table-credits">{app.totalCreditHours ?? '—'}</td>
-                      <td><StatusBadge status={app.overallStatus} /></td>
-                      <td className="table-submitted-at">{formatDate(app.submittedAt)}</td>
+                      <td className="table-app-id">{item.application_number}</td>
+                      <td>
+                        {item.student_name}
+                        <br /><span className="table-subtext">{item.student_no}</span>
+                      </td>
+                      <td>
+                        {item.term_code}
+                        <br /><span className="table-subtext">{item.academic_year}</span>
+                      </td>
+                      <td>
+                        {item.major || '—'}
+                        <br /><span className="table-subtext">{item.classification || '—'}</span>
+                      </td>
+                      <td>{item.housing_required ? 'Yes' : 'No'}</td>
+                      <td><StatusBadge status={formatOverallStatus(item.overall_status)} /></td>
+                      <td>
+                        <StatusBadge status={formatClearanceStatus(item.clearance_status)} />
+                        {item.blocked_reason && (
+                          <p className="table-subtext table-blocked-reason">{item.blocked_reason}</p>
+                        )}
+                      </td>
+                      <td className="table-submitted-at">{formatDate(item.submitted_at)}</td>
                       <td>
                         <button
                           type="button"
                           className={`view-details-btn${isSelected ? ' view-details-btn--active' : ''}`}
-                          onClick={() => handleViewDetails(app)}
+                          onClick={() => handleReview(item.application_id)}
                         >
-                          {isSelected ? 'Viewing' : 'View Details'}
+                          {isSelected ? 'Viewing' : 'Review'}
                         </button>
                       </td>
                     </tr>

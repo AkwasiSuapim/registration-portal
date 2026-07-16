@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react'
-import {
-  CLEARANCE_KEYS,
-  getClearanceLabel,
-  loadApplications,
-} from '../utils/registrationWorkflow'
+import { useState, useEffect, useCallback } from 'react'
+import { getMyApplications, getApplicationStatus, getApplicationDocuments, getApplicationActivity, uploadDocument } from '../services/api'
+import { formatOverallStatus, formatClearanceStatus, formatAvailability, statusSlug, DOCUMENT_TYPE_OPTIONS } from '../utils/backendLabels'
+import StatusBadge from '../components/StatusBadge'
+import DocumentList from '../components/DocumentList'
+import ActivityTimeline from '../components/ActivityTimeline'
 
 /* -------------------------------------------------------
    Helper — format ISO timestamp for display
@@ -14,36 +14,6 @@ function formatDate(isoString) {
     year: 'numeric', month: 'short', day: 'numeric',
     hour: '2-digit', minute: '2-digit',
   })
-}
-
-/* -------------------------------------------------------
-   Helper — derive a short Application ID from submittedAt
-------------------------------------------------------- */
-function formatApplicationId(submittedAt) {
-  if (!submittedAt) return 'APP-DRAFT'
-  const date = submittedAt.slice(0, 10).replace(/-/g, '')
-  const time = submittedAt.slice(11, 16).replace(':', '')
-  return `APP-${date}-${time}`
-}
-
-/* -------------------------------------------------------
-   Helper — CSS slug for any status string
-------------------------------------------------------- */
-function statusSlug(status) {
-  if (!status) return 'pending'
-  return status.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z-]/g, '')
-}
-
-/* -------------------------------------------------------
-   StatusBadge — coloured pill for any status value
-------------------------------------------------------- */
-function StatusBadge({ status }) {
-  const display = status || 'Pending'
-  return (
-    <span className={`status-badge status-badge--${statusSlug(display)}`}>
-      {display}
-    </span>
-  )
 }
 
 /* -------------------------------------------------------
@@ -70,35 +40,37 @@ function NextStepMessage({ overallStatus }) {
 }
 
 /* -------------------------------------------------------
-   ClearanceTracker — shows the status of all seven
-   clearances for one application
+   ClearanceTracker — shows every clearance returned by
+   GET /applications/{id}/status, in the order the backend sends them
 ------------------------------------------------------- */
 function ClearanceTracker({ clearances }) {
   return (
     <div className="clearance-tracker">
-      {CLEARANCE_KEYS.map((key) => {
-        const clearance = clearances?.[key]
-        const status    = clearance?.status || 'Pending'
-
+      {clearances.map((clearance) => {
+        const displayStatus = formatClearanceStatus(clearance.status)
         return (
-          <div key={key} className={`clearance-track-row clearance-track-row--${statusSlug(status)}`}>
+          <div
+            key={clearance.id}
+            className={`clearance-track-row clearance-track-row--${statusSlug(displayStatus)}`}
+          >
             <div className="clearance-track-row__top">
-              <span className="clearance-track-row__label">{getClearanceLabel(key)}</span>
-              <StatusBadge status={status} />
+              <span className="clearance-track-row__label">{clearance.clearance_label}</span>
+              <StatusBadge status={displayStatus} />
             </div>
 
-            {/* Show reviewer info when available */}
-            {clearance?.reviewedBy && (
-              <p className="clearance-track-row__meta">
-                Reviewed by {clearance.reviewedBy} on {formatDate(clearance.reviewedAt)}
-              </p>
+            <p className="clearance-track-row__meta">
+              {formatAvailability(clearance.availability)}
+              {clearance.reviewed_at && ` · Reviewed ${formatDate(clearance.reviewed_at)}`}
+            </p>
+
+            {/* Why a locked clearance can't be acted on yet */}
+            {clearance.availability === 'locked' && clearance.blocked_reason && (
+              <p className="clearance-track-row__office-message">{clearance.blocked_reason}</p>
             )}
 
-            {/* Show the office message to the student when available */}
-            {clearance?.message && (
-              <p className="clearance-track-row__office-message">
-                {clearance.message}
-              </p>
+            {/* Any note the reviewing office left */}
+            {clearance.message && (
+              <p className="clearance-track-row__office-message">{clearance.message}</p>
             )}
           </div>
         )
@@ -108,18 +80,181 @@ function ClearanceTracker({ clearances }) {
 }
 
 /* -------------------------------------------------------
+   StatusPanel — fetches GET /applications/{id}/status on demand,
+   toggled per application card so we don't load every clearance
+   tracker up front.
+------------------------------------------------------- */
+function StatusPanel({ applicationId }) {
+  const [loading, setLoading] = useState(true)
+  const [error, setError]     = useState('')
+  const [data, setData]       = useState(null)
+
+  useEffect(() => {
+    let cancelled = false
+    setLoading(true)
+    setError('')
+
+    getApplicationStatus(applicationId)
+      .then((result) => { if (!cancelled) setData(result) })
+      .catch((err) => { if (!cancelled) setError(err.message) })
+      .finally(() => { if (!cancelled) setLoading(false) })
+
+    return () => { cancelled = true }
+  }, [applicationId])
+
+  if (loading) {
+    return <p className="portal-status-panel__loading">Loading status details…</p>
+  }
+
+  if (error) {
+    return <p className="portal-status-panel__error">{error}</p>
+  }
+
+  return (
+    <div className="portal-app-card__clearances">
+      <h3 className="portal-app-card__clearances-title">Office Clearances</h3>
+      <ClearanceTracker clearances={data.clearances} />
+    </div>
+  )
+}
+
+/* -------------------------------------------------------
+   DocumentsPanel — lists + uploads documents for one application
+   (POST/GET /applications/{id}/documents), toggled on demand.
+------------------------------------------------------- */
+function DocumentsPanel({ applicationId }) {
+  const [loading, setLoading]     = useState(true)
+  const [error, setError]         = useState('')
+  const [documents, setDocuments] = useState([])
+
+  const [documentType, setDocumentType] = useState(DOCUMENT_TYPE_OPTIONS[0].value)
+  const [file, setFile]                 = useState(null)
+  const [uploading, setUploading]       = useState(false)
+  const [uploadError, setUploadError]   = useState('')
+  const [uploadMessage, setUploadMessage] = useState('')
+
+  const loadDocuments = useCallback(() => {
+    setLoading(true)
+    setError('')
+    getApplicationDocuments(applicationId)
+      .then(setDocuments)
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false))
+  }, [applicationId])
+
+  useEffect(() => { loadDocuments() }, [loadDocuments])
+
+  const handleUpload = async (event) => {
+    event.preventDefault()
+    if (!file) {
+      setUploadError('Please choose a file to upload.')
+      return
+    }
+
+    setUploading(true)
+    setUploadError('')
+    setUploadMessage('')
+
+    try {
+      const result = await uploadDocument(applicationId, documentType, file)
+      setUploadMessage(result.message)
+      setFile(null)
+      event.target.reset()
+      loadDocuments()
+    } catch (err) {
+      setUploadError(err.message || 'Could not upload this document.')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  return (
+    <div className="portal-app-card__section">
+      <h3 className="portal-app-card__section-title">Documents</h3>
+
+      <form className="document-upload-form" onSubmit={handleUpload}>
+        <label className="form-field">
+          <span className="form-field__label">Document type</span>
+          <select
+            className="form-field__control"
+            value={documentType}
+            onChange={(event) => setDocumentType(event.target.value)}
+          >
+            {DOCUMENT_TYPE_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>{option.label}</option>
+            ))}
+          </select>
+        </label>
+        <input
+          type="file"
+          className="document-upload-form__file"
+          accept=".pdf,.png,.jpg,.jpeg,.docx"
+          onChange={(event) => setFile(event.target.files[0] || null)}
+        />
+        <button type="submit" className="btn btn--primary" disabled={uploading}>
+          {uploading ? 'Uploading…' : 'Upload Document'}
+        </button>
+      </form>
+
+      {uploadError && <p className="form-status form-status--error">{uploadError}</p>}
+      {uploadMessage && <p className="form-status form-status--success">{uploadMessage}</p>}
+
+      {loading && <p className="portal-status-panel__loading">Loading documents…</p>}
+      {error && <p className="portal-status-panel__error">{error}</p>}
+      {!loading && !error && <DocumentList documents={documents} />}
+    </div>
+  )
+}
+
+/* -------------------------------------------------------
+   ActivityPanel — fetches GET /applications/{id}/activity
+   for the student's own application, toggled on demand.
+------------------------------------------------------- */
+function ActivityPanel({ applicationId }) {
+  const [loading, setLoading]   = useState(true)
+  const [error, setError]       = useState('')
+  const [activity, setActivity] = useState([])
+
+  useEffect(() => {
+    let cancelled = false
+    setLoading(true)
+    setError('')
+
+    getApplicationActivity(applicationId)
+      .then((result) => { if (!cancelled) setActivity(result.activity) })
+      .catch((err) => { if (!cancelled) setError(err.message) })
+      .finally(() => { if (!cancelled) setLoading(false) })
+
+    return () => { cancelled = true }
+  }, [applicationId])
+
+  if (loading) return <p className="portal-status-panel__loading">Loading activity…</p>
+  if (error) return <p className="portal-status-panel__error">{error}</p>
+
+  return (
+    <div className="portal-app-card__section">
+      <h3 className="portal-app-card__section-title">Activity</h3>
+      <ActivityTimeline activity={activity} />
+    </div>
+  )
+}
+
+/* -------------------------------------------------------
    ApplicationStatusCard — student-facing summary card
-   for one submitted application
+   for one submitted application (GET /students/me/applications)
 ------------------------------------------------------- */
 function ApplicationStatusCard({ application }) {
+  const [showStatus, setShowStatus]         = useState(false)
+  const [showDocuments, setShowDocuments]   = useState(false)
+  const [showActivity, setShowActivity]     = useState(false)
+
   const {
-    fullName, studentId, registrationTerm, major,
-    totalCreditHours, submittedAt,
-    selectedCourses   = [],
-    uploadedDocuments = [],
-    clearances        = {},
-    overallStatus     = 'In Progress',
+    id, application_number, term_code, academic_year, major, classification,
+    housing_required, total_credit_hours, overall_status,
+    submitted_at, courses = [],
   } = application
+
+  const overallStatusLabel = formatOverallStatus(overall_status)
 
   return (
     <div className="portal-app-card">
@@ -127,76 +262,84 @@ function ApplicationStatusCard({ application }) {
       {/* Card header */}
       <div className="portal-app-card__header">
         <div>
-          <p className="portal-app-card__app-id">{formatApplicationId(submittedAt)}</p>
-          <h2 className="portal-app-card__name">{fullName || '—'}</h2>
+          <p className="portal-app-card__app-id">{application_number}</p>
+          <h2 className="portal-app-card__name">{term_code} · {academic_year}</h2>
         </div>
-        <StatusBadge status={overallStatus} />
+        <StatusBadge status={overallStatusLabel} />
       </div>
 
       {/* Quick summary row */}
       <div className="portal-app-card__summary">
         <div className="portal-app-card__summary-item">
-          <span className="portal-app-card__summary-label">Student ID</span>
-          <span className="portal-app-card__summary-value">{studentId || '—'}</span>
-        </div>
-        <div className="portal-app-card__summary-item">
-          <span className="portal-app-card__summary-label">Enrollment Term</span>
-          <span className="portal-app-card__summary-value">{registrationTerm || '—'}</span>
-        </div>
-        <div className="portal-app-card__summary-item">
           <span className="portal-app-card__summary-label">Major</span>
           <span className="portal-app-card__summary-value">{major || '—'}</span>
         </div>
         <div className="portal-app-card__summary-item">
+          <span className="portal-app-card__summary-label">Classification</span>
+          <span className="portal-app-card__summary-value">{classification || '—'}</span>
+        </div>
+        <div className="portal-app-card__summary-item">
+          <span className="portal-app-card__summary-label">Housing Required</span>
+          <span className="portal-app-card__summary-value">{housing_required ? 'Yes' : 'No'}</span>
+        </div>
+        <div className="portal-app-card__summary-item">
           <span className="portal-app-card__summary-label">Total Credit Hours</span>
-          <span className="portal-app-card__summary-value">{totalCreditHours ?? '—'}</span>
+          <span className="portal-app-card__summary-value">{total_credit_hours ?? '—'}</span>
         </div>
         <div className="portal-app-card__summary-item">
           <span className="portal-app-card__summary-label">Submitted At</span>
-          <span className="portal-app-card__summary-value">{formatDate(submittedAt)}</span>
+          <span className="portal-app-card__summary-value">{formatDate(submitted_at)}</span>
         </div>
       </div>
 
       {/* Next step guidance */}
-      <NextStepMessage overallStatus={overallStatus} />
+      <NextStepMessage overallStatus={overallStatusLabel} />
 
       {/* Selected courses */}
-      {selectedCourses.length > 0 && (
+      {courses.length > 0 && (
         <div className="portal-app-card__section">
           <h3 className="portal-app-card__section-title">Selected Courses</h3>
           <div className="portal-course-list">
-            {selectedCourses.map((course) => (
-              <div key={course.id || course.code} className="portal-course-row">
-                <span className="portal-course-row__code">{course.code}</span>
-                <span className="portal-course-row__title">{course.title}</span>
-                <span className="portal-course-row__credits">{course.credits} credits</span>
-                <span className="portal-course-row__schedule">{course.schedule}</span>
+            {courses.map((course) => (
+              <div key={course.id} className="portal-course-row">
+                <span className="portal-course-row__code">{course.course_code}</span>
+                <span className="portal-course-row__title">{course.course_title}</span>
+                <span className="portal-course-row__credits">{course.credit_hours} credits</span>
+                <span className="portal-course-row__schedule">{course.section || '—'}</span>
               </div>
             ))}
           </div>
         </div>
       )}
 
-      {/* Document summary */}
-      {uploadedDocuments.length > 0 && (
-        <div className="portal-app-card__section">
-          <h3 className="portal-app-card__section-title">Submitted Documents</h3>
-          <div className="portal-doc-list">
-            {uploadedDocuments.map(({ documentId, fileName }) => (
-              <div key={documentId} className="portal-doc-row">
-                <span className="portal-doc-row__name">{documentId}</span>
-                <span className="portal-doc-row__file">{fileName}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Office clearance tracker */}
-      <div className="portal-app-card__clearances">
-        <h3 className="portal-app-card__clearances-title">Office Clearances</h3>
-        <ClearanceTracker clearances={clearances} />
+      {/* Office clearance tracker, documents, and activity — each fetched on demand */}
+      <div className="portal-app-card__toggles">
+        <button
+          type="button"
+          className="btn btn--outline portal-app-card__status-toggle"
+          onClick={() => setShowStatus((prev) => !prev)}
+        >
+          {showStatus ? 'Hide Status Details' : 'View Status Details'}
+        </button>
+        <button
+          type="button"
+          className="btn btn--outline portal-app-card__status-toggle"
+          onClick={() => setShowDocuments((prev) => !prev)}
+        >
+          {showDocuments ? 'Hide Documents' : 'Manage Documents'}
+        </button>
+        <button
+          type="button"
+          className="btn btn--outline portal-app-card__status-toggle"
+          onClick={() => setShowActivity((prev) => !prev)}
+        >
+          {showActivity ? 'Hide Activity' : 'View Activity'}
+        </button>
       </div>
+
+      {showStatus && <StatusPanel applicationId={id} />}
+      {showDocuments && <DocumentsPanel applicationId={id} />}
+      {showActivity && <ActivityPanel applicationId={id} />}
 
     </div>
   )
@@ -205,33 +348,28 @@ function ApplicationStatusCard({ application }) {
 /* -------------------------------------------------------
    StudentPortal — main page component
 
-   This is frontend-only access control for the prototype.
-   Real authorization will be enforced by the backend later.
+   Session is passed down from App.jsx (restored via GET /auth/me),
+   so this page trusts currentSession rather than reading localStorage.
 ------------------------------------------------------- */
-function StudentPortal({ onNavigate }) {
+function StudentPortal({ onNavigate, currentSession }) {
   const [applications, setApplications] = useState([])
+  const [loading, setLoading]           = useState(true)
+  const [error, setError]               = useState('')
 
-  // Read the session synchronously so the correct view renders immediately
-  // without a flash of wrong content on first paint.
-  const currentSession = JSON.parse(localStorage.getItem('portalUserSession') || 'null')
-  const isStudentSession = currentSession?.userType === 'student'
+  const isStudentSession = currentSession?.account_type === 'student'
 
-  useEffect(() => {
-    const apps = loadApplications()
-    setApplications(apps)
+  const loadApplications = useCallback(() => {
+    setLoading(true)
+    setError('')
+    getMyApplications()
+      .then(setApplications)
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false))
   }, [])
 
-  // Filter to only the applications that belong to the logged-in student.
-  // We match on studentId first, then fall back to email for flexibility.
-  const matchingApplications = isStudentSession
-    ? applications.filter((app) =>
-        (currentSession.studentId && app.studentId === currentSession.studentId) ||
-        (currentSession.email && (
-          app.email === currentSession.email ||
-          app.livingstoneEmail === currentSession.email
-        ))
-      )
-    : []
+  useEffect(() => {
+    if (isStudentSession) loadApplications()
+  }, [isStudentSession, loadApplications])
 
   // Shared page header used in all states below
   const pageHeader = (
@@ -278,8 +416,37 @@ function StudentPortal({ onNavigate }) {
     )
   }
 
-  // Student is logged in but no application matches their account
-  if (matchingApplications.length === 0) {
+  // Applications are still loading
+  if (loading) {
+    return (
+      <div className="student-portal">
+        {pageHeader}
+        <p className="portal-loading">Loading your applications…</p>
+      </div>
+    )
+  }
+
+  // The backend request failed (validation, auth, or the server is unreachable)
+  if (error) {
+    return (
+      <div className="student-portal">
+        {pageHeader}
+        <div className="admin-empty">
+          <svg className="admin-empty__icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
+          </svg>
+          <p className="admin-empty__text">We couldn't load your applications.</p>
+          <p className="admin-empty__hint">{error}</p>
+          <button type="button" className="btn btn--primary" onClick={loadApplications}>
+            Try Again
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // Student is logged in but has not submitted any application yet
+  if (applications.length === 0) {
     return (
       <div className="student-portal">
         {pageHeader}
@@ -288,11 +455,7 @@ function StudentPortal({ onNavigate }) {
             <path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z" />
           </svg>
           <p className="admin-empty__text">
-            No registration application found for this student account.
-          </p>
-          <p className="admin-empty__hint">
-            If you have already submitted, make sure your Student ID and email match
-            the information used during registration.
+            You have not submitted a registration application yet.
           </p>
           <button
             type="button"
@@ -306,13 +469,13 @@ function StudentPortal({ onNavigate }) {
     )
   }
 
-  // Student is logged in and has at least one matching application
+  // Student is logged in and has at least one application on record
   return (
     <div className="student-portal">
       {pageHeader}
       <div className="portal-app-list">
-        {matchingApplications.map((app, index) => (
-          <ApplicationStatusCard key={app.submittedAt || index} application={app} />
+        {applications.map((app) => (
+          <ApplicationStatusCard key={app.id} application={app} />
         ))}
       </div>
     </div>
