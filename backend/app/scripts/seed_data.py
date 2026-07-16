@@ -59,17 +59,52 @@ DEPENDENCIES_TO_SEED = [
 # Password shared by all demo accounts.
 _DEMO_PASSWORD = "Password123!"
 
-# Demo student account.
-_DEMO_STUDENT = {
-    "email": "jdoe@student.livingstone.edu",
-    "account_type": "student",
-    "role_key": "student",
-    "student_no": "100123456",
-    "livingstone_email": "jdoe@student.livingstone.edu",
-    "first_name": "John",
-    "last_name": "Doe",
-    "residency_type": "residential",
-}
+# Demo student accounts.
+_DEMO_STUDENTS = [
+    {
+        "email": "jdoe@student.livingstone.edu",
+        "account_type": "student",
+        "role_key": "student",
+        "student_no": "100123456",
+        "livingstone_email": "jdoe@student.livingstone.edu",
+        "first_name": "John",
+        "last_name": "Doe",
+        "residency_type": "residential",
+    },
+    {
+        "email": "asmith@student.livingstone.edu",
+        "account_type": "student",
+        "role_key": "student",
+        "student_no": "100222222",
+        "livingstone_email": "asmith@student.livingstone.edu",
+        "first_name": "Alice",
+        "last_name": "Smith",
+        "major": "Mathematics",
+        "residency_type": "residential",
+    },
+    {
+        "email": "mjohnson@student.livingstone.edu",
+        "account_type": "student",
+        "role_key": "student",
+        "student_no": "100333333",
+        "livingstone_email": "mjohnson@student.livingstone.edu",
+        "first_name": "Michael",
+        "last_name": "Johnson",
+        "major": "Computer Information Systems",
+        "residency_type": "residential",
+    },
+    {
+        "email": "akyerematen@student.livingstone.edu",
+        "account_type": "student",
+        "role_key": "student",
+        "student_no": "100444444",
+        "livingstone_email": "akyerematen@student.livingstone.edu",
+        "first_name": "Kwame",
+        "last_name": "Akyerematen",
+        "major": "Data Science",
+        "residency_type": "residential",
+    },
+]
 
 # Demo official accounts — one per office role.
 _DEMO_OFFICIALS = [
@@ -135,37 +170,43 @@ def seed_dependencies(db) -> tuple[int, int]:
     return created, skipped
 
 
-def seed_demo_student(db, roles: dict[str, Role]) -> str:
+def seed_demo_students(db, roles: dict[str, Role]) -> tuple[int, int]:
     """
-    Creates the demo student user and student profile if they do not exist.
+    Creates demo student users and profiles if they do not exist.
 
-    Returns 'created' or 'skipped'.
+    Returns (created, skipped) counts.
     """
-    data = _DEMO_STUDENT
-    existing = db.query(User).filter_by(email=data["email"]).first()
-    if existing:
-        return "skipped"
+    created = 0
+    skipped = 0
+    for data in _DEMO_STUDENTS:
+        existing = db.query(User).filter_by(email=data["email"]).first()
+        if existing:
+            skipped += 1
+            continue
 
-    role = roles[data["role_key"]]
-    user = User(
-        email=data["email"],
-        password_hash=hash_password(_DEMO_PASSWORD),
-        account_type=data["account_type"],
-        role_id=role.id,
-    )
-    db.add(user)
-    db.flush()  # populate user.id before creating the student profile
+        role = roles[data["role_key"]]
+        user = User(
+            email=data["email"],
+            password_hash=hash_password(_DEMO_PASSWORD),
+            account_type=data["account_type"],
+            role_id=role.id,
+        )
+        db.add(user)
+        db.flush()  # populate user.id before creating the student profile
 
-    student = Student(
-        user_id=user.id,
-        student_no=data["student_no"],
-        livingstone_email=data["livingstone_email"],
-        first_name=data["first_name"],
-        last_name=data["last_name"],
-        residency_type=data["residency_type"],
-    )
-    db.add(student)
-    return "created"
+        student = Student(
+            user_id=user.id,
+            student_no=data["student_no"],
+            livingstone_email=data["livingstone_email"],
+            first_name=data["first_name"],
+            last_name=data["last_name"],
+            major=data.get("major"),
+            residency_type=data["residency_type"],
+        )
+        db.add(student)
+        created += 1
+
+    return created, skipped
 
 
 def seed_demo_officials(db, roles: dict[str, Role]) -> tuple[int, int]:
@@ -245,8 +286,11 @@ def seed_all():
         if settings.ENVIRONMENT == "development":
             print("Seeding demo users (development only)...")
 
-            student_result = seed_demo_student(db, roles)
-            print(f"  Demo student (jdoe@student.livingstone.edu): {student_result}.")
+            student_created, student_skipped = seed_demo_students(db, roles)
+            print(
+                f"  Demo students: created {student_created}, "
+                f"skipped {student_skipped} existing."
+            )
 
             off_created, off_skipped = seed_demo_officials(db, roles)
             print(f"  Demo officials: created {off_created}, skipped {off_skipped} existing.")
