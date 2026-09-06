@@ -5,7 +5,9 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  // 'docs' holds the design-tool export (docs/design/**) — a reference
+  // bundle with its own throwaway frontend copy, not part of this app.
+  globalIgnores(['dist', 'docs']),
   {
     files: ['**/*.{js,jsx}'],
     extends: [

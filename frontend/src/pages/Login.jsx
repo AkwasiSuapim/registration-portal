@@ -1,142 +1,89 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   isValidStaffEmail,
   isEduStudentIdentifier,
 } from '../utils/registrationWorkflow'
 import { login } from '../services/api'
+import campusPhoto from '../assets/login/campus.jpg'
+import lcLogoWhite from '../assets/login/lc-logo-white.png'
 
-// Login calls the real backend (POST /auth/login). The access type
-// tabs below only decide which fields to show — the backend response
-// (account_type / role_key) is what actually determines where the
-// user is routed and what they're allowed to do.
+// Login calls the real backend (POST /auth/login) with whatever
+// identifier the visitor enters — a student ID, a student email, or a
+// staff email. The backend response (account_type / role_key) is what
+// actually decides who this account is and where it gets routed;
+// this page never chooses that itself.
 
 /* -------------------------------------------------------
-   Reusable form field — reuses existing .form-field styles
+   validateField — per-field validation, returning the inline
+   hint text to show (or '' when the field is valid).
 ------------------------------------------------------- */
-function LoginField({ label, type, name, value, placeholder, onChange }) {
-  return (
-    <label className="form-field">
-      <span className="form-field__label">{label}</span>
-      <input
-        className="form-field__control"
-        type={type}
-        name={name}
-        value={value}
-        placeholder={placeholder}
-        onChange={onChange}
-        autoComplete="off"
-      />
-    </label>
-  )
+function identifierHint(identifier) {
+  const trimmed = identifier.trim()
+  if (!trimmed) return 'Enter your student ID or college email.'
+  if (isEduStudentIdentifier(trimmed) || isValidStaffEmail(trimmed)) return ''
+  if (trimmed.includes('@')) {
+    return 'Use your @student.livingstone.edu or @livingstone.edu email.'
+  }
+  return 'Student ID must start with 100 and contain 9 digits total.'
 }
 
-/* -------------------------------------------------------
-   validateStudentForm — returns an array of error strings.
-   Students log in with either a student ID or student email,
-   plus a password (not verified yet — backend will handle that).
-------------------------------------------------------- */
-function validateStudentForm(identifier, password) {
-  const errs = []
-
-  if (!identifier.trim()) {
-    errs.push('Student ID or Email is required.')
-  } else if (!isEduStudentIdentifier(identifier)) {
-    // Give a specific message based on what the user appeared to enter
-    if (identifier.includes('@')) {
-      errs.push('Please use your Livingstone student email ending in @student.livingstone.edu.')
-    } else {
-      errs.push('Student ID must start with 100 and contain 9 digits total.')
-    }
-  }
-
-  if (!password.trim()) {
-    errs.push('Password is required.')
-  }
-
-  return errs
-}
-
-/* -------------------------------------------------------
-   validateOfficialForm — returns an array of error strings.
-   Officials log in with their staff email and password. Their office
-   role is determined by the backend, not chosen here.
-------------------------------------------------------- */
-function validateOfficialForm(staffEmail, password) {
-  const errs = []
-
-  if (!staffEmail.trim()) {
-    errs.push('Staff Email is required.')
-  } else if (!isValidStaffEmail(staffEmail)) {
-    errs.push('Please use your official Livingstone staff email ending in @livingstone.edu.')
-  }
-
-  if (!password.trim()) {
-    errs.push('Password is required.')
-  }
-
-  return errs
+function passwordHint(password) {
+  return password ? '' : 'Enter your password.'
 }
 
 /* -------------------------------------------------------
    Login — main page component
 ------------------------------------------------------- */
-function Login({ onNavigate, onLogin }) {
-  // 'student' | 'official' | '' (nothing selected yet)
-  const [accessType, setAccessType] = useState('')
+function Login({ onNavigate, onLogin, sessionExpired, onDismissSessionExpired }) {
+  const [identifier, setIdentifier] = useState('')
+  const [password, setPassword]     = useState('')
+  const [reveal, setReveal]         = useState(false)
+  const [remember, setRemember]     = useState(true)
 
-  const [studentForm, setStudentForm]   = useState({ identifier: '', password: '' })
-  const [officialForm, setOfficialForm] = useState({ staffEmail: '', password: '' })
-
-  const [errors, setErrors]         = useState([])
+  const [touched, setTouched]       = useState(false)
   const [loggingIn, setLoggingIn]   = useState(false)
+  const [formError, setFormError]   = useState('')
 
-  const handleAccessTypeChange = (type) => {
-    setAccessType(type)
-    setErrors([])
-  }
+  const identifierRef = useRef(null)
 
-  const handleStudentChange = (event) => {
-    const { name, value } = event.target
-    setStudentForm((prev) => ({ ...prev, [name]: value }))
-  }
+  // Autofocus the first field on arrival — a keyboard-first entry
+  // point into the form.
+  useEffect(() => {
+    identifierRef.current?.focus()
+  }, [])
 
-  const handleOfficialChange = (event) => {
-    const { name, value } = event.target
-    setOfficialForm((prev) => ({ ...prev, [name]: value }))
-  }
+  // The "session expired" banner belongs to the visit that triggered
+  // it — once this page is left, clear it so a later, unrelated visit
+  // to /login starts clean.
+  useEffect(() => {
+    return () => onDismissSessionExpired?.()
+  }, [onDismissSessionExpired])
 
-  const handleLogin = async () => {
-    if (!accessType) {
-      setErrors(['Please select an access type to continue.'])
+  const idHint = touched ? identifierHint(identifier) : ''
+  const pwHint = touched ? passwordHint(password) : ''
+  const idInvalid = Boolean(formError) || Boolean(idHint)
+  const pwInvalid = Boolean(formError) || Boolean(pwHint)
+
+  const canSubmit = !identifierHint(identifier) && !passwordHint(password) && !loggingIn
+
+  const handleSubmit = async (event) => {
+    event.preventDefault()
+
+    if (identifierHint(identifier) || passwordHint(password)) {
+      setTouched(true)
       return
     }
 
-    let identifier
-    let password
-
-    if (accessType === 'student') {
-      const errs = validateStudentForm(studentForm.identifier, studentForm.password)
-      if (errs.length > 0) { setErrors(errs); return }
-      identifier = studentForm.identifier.trim()
-      password   = studentForm.password
-    } else {
-      const errs = validateOfficialForm(officialForm.staffEmail, officialForm.password)
-      if (errs.length > 0) { setErrors(errs); return }
-      identifier = officialForm.staffEmail.trim()
-      password   = officialForm.password
-    }
-
-    setErrors([])
+    setTouched(false)
+    setFormError('')
     setLoggingIn(true)
 
     try {
-      // The backend response — not the tab the user picked — decides
-      // who this account actually is and where it should go.
-      const user = await login(identifier, password)
+      const user = await login(identifier.trim(), password)
       onLogin(user)
       onNavigate(user.account_type === 'student' ? 'student-portal' : 'admin')
     } catch (err) {
-      setErrors([err.message || 'Login failed. Please try again.'])
+      setFormError(err.message || 'The ID/email or password you entered is incorrect. Please try again.')
     } finally {
       setLoggingIn(false)
     }
@@ -144,128 +91,154 @@ function Login({ onNavigate, onLogin }) {
 
   return (
     <div className="login-page">
-      <div className="login-card">
+      <img className="login-page__bg" src={campusPhoto} alt="" aria-hidden="true" />
+      <div className="login-page__scrim" aria-hidden="true"></div>
 
-        {/* Header */}
-        <div className="login-card__header">
-          <h1 className="login-card__title">Portal Login</h1>
-          <p className="login-card__intro">
-            Choose your access type to continue to the Student Registration Portal.
-          </p>
-        </div>
+      <main className="login-page__main">
+        <div className="login-page__frame">
 
-        <div className="login-card__body">
+          <div className="login-card">
 
-          {/* Step 1 — access type selection */}
-          <p className="login-step-label">Step 1 — Select your access type</p>
-          <div className="access-type-grid">
+            <div className="login-card__brand">
+              <img className="login-card__logo" src={lcLogoWhite} alt="Livingstone College" />
+              <span className="login-card__brand-label">Student Registration &amp; Clearance Portal</span>
+            </div>
 
-            <button
-              type="button"
-              className={`access-type-card${accessType === 'student' ? ' access-type-card--selected' : ''}`}
-              onClick={() => handleAccessTypeChange('student')}
-            >
-              <svg className="access-type-card__icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
-              </svg>
-              <span className="access-type-card__title">Student</span>
-              <span className="access-type-card__desc">
-                View your registration status and office clearances
-              </span>
-            </button>
+            <div className="login-card__divider"></div>
 
-            <button
-              type="button"
-              className={`access-type-card${accessType === 'official' ? ' access-type-card--selected' : ''}`}
-              onClick={() => handleAccessTypeChange('official')}
-            >
-              <svg className="access-type-card__icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                <path d="M20 6h-2.18c.07-.44.18-.88.18-1.36C18 2.51 16.49 1 14.64 1c-1.04 0-1.96.52-2.64 1.32L12 2.7l-.36-.38C10.96 1.52 10.04 1 9 1 7.51 1 6 2.51 6 4.36c0 .48.1.92.18 1.36H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-5.36-3c.96 0 1.72.78 1.72 1.72s-.76 1.72-1.72 1.72-1.72-.78-1.72-1.72.76-1.72 1.72-1.72zm-7.28 0c.96 0 1.72.78 1.72 1.72S8.32 6.44 7.36 6.44s-1.72-.78-1.72-1.72.76-1.72 1.72-1.72zM20 19H4v-2l8-5 8 5v2zm0-5.27L12 9 4 13.73V8h16v5.73z" />
-              </svg>
-              <span className="access-type-card__title">Official / Registrar Staff</span>
-              <span className="access-type-card__desc">
-                Review and process student registration applications
-              </span>
-            </button>
+            <div className="login-card__heading">
+              <h1 className="login-card__title">Welcome back</h1>
+              <p className="login-card__subtitle">Sign in to continue your registration.</p>
+            </div>
 
+            {sessionExpired && (
+              <div className="login-banner" role="alert">
+                <span className="login-banner__dot" aria-hidden="true"></span>
+                <div>
+                  <span className="login-banner__title">Session expired</span>
+                  <span className="login-banner__text">You were signed out after a period of inactivity. Sign in again to continue.</span>
+                </div>
+              </div>
+            )}
+
+            <form className="login-form" onSubmit={handleSubmit} noValidate>
+
+              <div className="login-field">
+                <label className="login-field__label" htmlFor="login-identifier">
+                  Student ID or college email
+                </label>
+                <input
+                  id="login-identifier"
+                  ref={identifierRef}
+                  className="login-field__control"
+                  type="text"
+                  name="identifier"
+                  autoComplete="username"
+                  placeholder="Enter your student ID or college email"
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
+                  disabled={loggingIn}
+                  aria-invalid={idInvalid}
+                  aria-describedby={formError ? 'login-form-error' : undefined}
+                  data-invalid={idInvalid || undefined}
+                />
+                {idHint && !formError && (
+                  <span className="login-field__hint">{idHint}</span>
+                )}
+              </div>
+
+              <div className="login-field">
+                <label className="login-field__label" htmlFor="login-password">
+                  Password
+                </label>
+                <div className="login-password">
+                  <input
+                    id="login-password"
+                    className="login-field__control login-password__control"
+                    type={reveal ? 'text' : 'password'}
+                    name="password"
+                    autoComplete="current-password"
+                    placeholder="Enter your password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    disabled={loggingIn}
+                    aria-invalid={pwInvalid}
+                    aria-describedby={formError ? 'login-form-error' : undefined}
+                    data-invalid={pwInvalid || undefined}
+                  />
+                  <button
+                    type="button"
+                    className="login-password__toggle"
+                    onClick={() => setReveal((r) => !r)}
+                    disabled={loggingIn}
+                    aria-pressed={reveal}
+                    aria-controls="login-password"
+                  >
+                    {reveal ? 'Hide' : 'Show'}
+                  </button>
+                </div>
+                {pwHint && !formError && (
+                  <span className="login-field__hint">{pwHint}</span>
+                )}
+              </div>
+
+              {formError && (
+                <div id="login-form-error" className="login-error" role="alert">
+                  <span className="login-error__icon" aria-hidden="true">!</span>
+                  <span className="login-error__text">{formError}</span>
+                </div>
+              )}
+
+              <div className="login-options">
+                <label className="login-remember">
+                  <input
+                    type="checkbox"
+                    checked={remember}
+                    onChange={(e) => setRemember(e.target.checked)}
+                    disabled={loggingIn}
+                  />
+                  Remember me
+                </label>
+                <a className="login-forgot" href="mailto:info@livingstone.edu">
+                  Forgot password?
+                </a>
+              </div>
+
+              <button
+                type="submit"
+                className={`login-submit${loggingIn ? ' login-submit--loading' : !canSubmit ? ' login-submit--blocked' : ''}`}
+                disabled={!canSubmit}
+                aria-busy={loggingIn}
+              >
+                {loggingIn && <span className="login-submit__spinner" aria-hidden="true"></span>}
+                {loggingIn ? 'Signing in…' : 'Sign in'}
+              </button>
+            </form>
+
+            <div className="login-card__divider login-card__divider--tight"></div>
+
+            <p className="login-support">
+              Need help accessing your account?{' '}
+              <a href="mailto:info@livingstone.edu">Contact Registration Support.</a>
+            </p>
           </div>
 
-          {/* Step 2 — student fields */}
-          {accessType === 'student' && (
-            <div className="login-form">
-              <p className="login-step-label">Step 2 — Enter your student details</p>
-              <LoginField
-                label="Student ID or Email"
-                type="text"
-                name="identifier"
-                value={studentForm.identifier}
-                placeholder="e.g. 100123456 or jdoe@student.livingstone.edu"
-                onChange={handleStudentChange}
-              />
-              <LoginField
-                label="Password"
-                type="password"
-                name="password"
-                value={studentForm.password}
-                placeholder="Enter your password"
-                onChange={handleStudentChange}
-              />
-            </div>
-          )}
-
-          {/* Step 2 — official fields */}
-          {accessType === 'official' && (
-            <div className="login-form">
-              <p className="login-step-label">Step 2 — Enter your staff details</p>
-              <LoginField
-                label="Staff Email"
-                type="email"
-                name="staffEmail"
-                value={officialForm.staffEmail}
-                placeholder="e.g. jdoe@livingstone.edu"
-                onChange={handleOfficialChange}
-              />
-              <LoginField
-                label="Password"
-                type="password"
-                name="password"
-                value={officialForm.password}
-                placeholder="Enter your password"
-                onChange={handleOfficialChange}
-              />
-              <p className="login-step-hint">
-                Your office role is determined automatically after login.
-              </p>
-            </div>
-          )}
-
-          {/* Validation error summary */}
-          {errors.length > 0 && (
-            <div className="login-errors" role="alert">
-              {errors.map((err, index) => (
-                <p key={index} className="login-errors__item">{err}</p>
-              ))}
-            </div>
-          )}
-
-          {/* Submit — only shown once an access type is selected */}
-          {accessType && (
-            <button
-              type="button"
-              className="btn btn--primary login-card__submit"
-              onClick={handleLogin}
-              disabled={loggingIn}
-            >
-              {loggingIn
-                ? 'Logging in…'
-                : accessType === 'student'
-                  ? 'Continue to Student Portal'
-                  : 'Continue to Admin Dashboard'}
+          <div className="login-back-wrap">
+            <button type="button" className="login-back" onClick={() => onNavigate('home')}>
+              <span aria-hidden="true">&#8592;</span> Back to portal home
             </button>
-          )}
-
+          </div>
         </div>
-      </div>
+      </main>
+
+      <footer className="login-footer">
+        <div className="login-footer__links">
+          <a href="#top">Privacy</a>
+          <a href="#top">Accessibility</a>
+          <a href="mailto:info@livingstone.edu">Support</a>
+        </div>
+        <p className="login-footer__copy">Livingstone College &middot; Office of the Registrar &middot; Authorized use only</p>
+      </footer>
     </div>
   )
 }

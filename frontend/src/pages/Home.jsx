@@ -1,207 +1,450 @@
-const STAT_ICON_PATHS = {
-  people:
-    'M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z',
-  document:
-    'M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z',
-  review:
-    'M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z',
-  clock:
-    'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z',
-}
+import { useState } from 'react'
+import lcMark from '../assets/landing/lc-logo.png'
+import campusHero from '../assets/landing/campus-hero.jpg'
 
-const CHECK_PATH = 'M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z'
+/* -------------------------------------------------------
+   Static content for the landing page. Kept as plain data
+   so the JSX below stays a straightforward render — nothing
+   here talks to the API, this page is pure marketing/entry.
+------------------------------------------------------- */
 
-const stats = [
-  { iconKey: 'people',   headline: '700+',    label: 'STUDENTS SERVED'    },
-  { iconKey: 'document', headline: 'Digital', label: 'FORM SUBMISSION'    },
-  { iconKey: 'review',   headline: 'Review',  label: 'REGISTRAR WORKFLOW' },
-  { iconKey: 'clock',    headline: 'Live',    label: 'STATUS UPDATES'     },
+const statBar = [
+  { value: '7',     label: 'Campus clearance offices'    },
+  { value: '1',     label: 'Connected workflow'           },
+  { value: 'Clear', label: 'Next-step guidance'            },
+  { value: 'Live',  label: 'Real-time status visibility'   },
 ]
 
-const previewSteps = [
-  { number: 1, title: 'Personal Info',    status: 'completed'   },
-  { number: 2, title: 'Course Selection', status: 'in-progress' },
-  { number: 3, title: 'Final Review',     status: 'pending'     },
+const howItWorksSteps = [
+  {
+    title: 'Complete your information',
+    desc:  'Review your student details and submit the information required for registration.',
+  },
+  {
+    title: 'Follow your clearances',
+    desc:  'See the status of every participating campus office in one place.',
+  },
+  {
+    title: 'Finish registration',
+    desc:  'Resolve outstanding requirements and receive confirmation when registration is complete.',
+  },
 ]
-
-const STATUS_LABELS = {
-  'completed':   'COMPLETED',
-  'in-progress': 'IN PROGRESS',
-  'pending':     'PENDING',
-}
 
 const BENEFIT_ICON_PATHS = {
-  speed:
-    'M7 2v11h3v9l7-12h-4l4-8z',
-  digital:
-    'M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z',
-  review:
-    'M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z',
+  next:   ['M4 12h11', 'M11 7l5 5-5 5', 'M20 5v14'],
+  track:  ['M12 8v4l3 2'],
+  visits: ['M4 20V9l8-5 8 5v11', 'M9 20v-6h6v6'],
+  earlier: ['M12 8v5', 'M12 16h.01'],
 }
 
-const benefitCards = [
+const benefits = [
   {
-    iconKey:     'speed',
-    title:       'Faster Registration',
-    description: 'Students can complete registration online without waiting in long physical lines. Save time and avoid the stress of manual paperwork.',
-    linkText:    'Learn More →',
+    iconKey: 'next',
+    title:   'Know what to do next',
+    desc:    'See the exact action required to move your registration forward.',
   },
   {
-    iconKey:     'digital',
-    title:       'Digital Submission',
-    description: 'Student information and required documents can be submitted securely through the portal. Organized validation helps reduce missing information.',
-    linkText:    'Learn More →',
+    iconKey: 'track',
+    title:   'Track every clearance',
+    desc:    'Monitor each participating office without visiting multiple locations for updates.',
+    circle:  true,
   },
   {
-    iconKey:     'review',
-    title:       'Registrar Review',
-    description: 'Administrators can review, approve, reject, or request corrections digitally, creating a transparent and accountable review process.',
-    linkText:    'Learn More →',
+    iconKey: 'visits',
+    title:   'Reduce unnecessary office visits',
+    desc:    'Complete available steps online and visit an office only when in-person action is required.',
+  },
+  {
+    iconKey: 'earlier',
+    title:   'Resolve problems earlier',
+    desc:    'Identify missing information or blocked clearances before registration deadlines.',
+    circle:  true,
   },
 ]
 
-const footerLinks = [
-  { label: 'Privacy Policy',   href: '#' },
-  { label: 'Terms of Service', href: '#' },
-  { label: 'Help Center',      href: '#' },
-  { label: 'Contact Support',  href: '#' },
+const officeNames = [
+  'Registrar',
+  'Health Services',
+  'Success Center',
+  'Financial Aid',
+  'Business Office',
+  'Residence Life',
+  'Public Safety',
 ]
 
-function StepIndicator({ number, status }) {
-  if (status === 'completed') {
-    return (
-      <div className="step-indicator step-indicator--completed">
-        <svg viewBox="0 0 24 24" fill="white" aria-hidden="true">
-          <path d={CHECK_PATH} />
-        </svg>
-      </div>
-    )
-  }
+// Illustrative clearance statuses shown in the "Portal Preview" mockup
+// below — sample content, not a live read from the backend.
+const STATUS = {
+  ok:     { label: 'Approved',        glyph: '✓', modifier: 'ok'     },
+  action: { label: 'Action Required', glyph: '!',       modifier: 'action' },
+  pending:{ label: 'Pending',         glyph: '•', modifier: 'pending' },
+}
+
+const officeStatuses = [
+  { name: 'Registrar',        status: STATUS.ok      },
+  { name: 'Health Services',  status: STATUS.ok      },
+  { name: 'Success Center',   status: STATUS.ok      },
+  { name: 'Financial Aid',    status: STATUS.action  },
+  { name: 'Business Office',  status: STATUS.ok      },
+  { name: 'Residence Life',   status: STATUS.ok      },
+  { name: 'Public Safety',    status: STATUS.pending },
+]
+
+const faqs = [
+  {
+    q: 'Who can use the registration portal?',
+    a: 'Currently enrolled and returning Livingstone College students with an active college account can use the portal to register and follow their clearances.',
+  },
+  {
+    q: 'How do I access my account?',
+    a: 'Sign in with your Livingstone College credentials. Accounts are issued by the college, so there is no public sign-up.',
+  },
+  {
+    q: 'Can I save my progress and return later?',
+    a: 'Yes. Your registration information is saved as you go, and you can sign back in to continue where you left off.',
+  },
+  {
+    q: 'What does “Action Required” mean?',
+    a: 'An office needs something from you before it can approve your clearance — usually a document, a payment arrangement, or a confirmation.',
+  },
+  {
+    q: 'How will I know when an office approves my clearance?',
+    a: 'The office status updates in your portal and you receive a notification, so you can see your overall completion move forward.',
+  },
+  {
+    q: 'Who should I contact if I cannot sign in?',
+    a: 'Contact the Registrar’s Office at 704-216-6001 or email info@livingstone.edu, and technical support can restore your access.',
+  },
+]
+
+function BenefitIcon({ iconKey, circle }) {
   return (
-    <div className={`step-indicator step-indicator--${status}`}>
-      {number}
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      {circle && <circle cx="12" cy="12" r="8" />}
+      {BENEFIT_ICON_PATHS[iconKey].map((d) => (
+        <path key={d} d={d} />
+      ))}
+    </svg>
+  )
+}
+
+function FaqItem({ faq, isOpen, onToggle, index }) {
+  const panelId = `faq-panel-${index}`
+  return (
+    <div className="faq-item">
+      <button
+        type="button"
+        className="faq-item__question"
+        aria-expanded={isOpen}
+        aria-controls={panelId}
+        onClick={onToggle}
+      >
+        <span>{faq.q}</span>
+        <span className="faq-item__toggle" aria-hidden="true">{isOpen ? '–' : '+'}</span>
+      </button>
+      {isOpen && (
+        <p id={panelId} className="faq-item__answer">{faq.a}</p>
+      )}
     </div>
   )
 }
 
 function Home({ onNavigate }) {
+  const [openFaq, setOpenFaq] = useState(0)
+
   return (
     <div className="home">
-      <section className="hero">
-        <div className="hero__content">
-          <h1 className="hero__headline">
-            Register Online.<br />
-            <span className="hero__headline--accent">Skip the Long Line.</span>
-          </h1>
-          <p className="hero__description">
-            Complete your student registration digitally and help reduce long
-            in-person queues for students and registrar staff. Reliable, efficient,
-            and mobile-friendly.
+
+      {/* ============ Hero ============ */}
+      <section className="hero" id="top" aria-label="Introduction">
+        <div className="hero__decor" aria-hidden="true" />
+        <div className="hero__inner">
+          <div className="hero__content">
+            <p className="hero__eyebrow">Livingstone College Registration</p>
+            <h1 className="hero__headline">
+              Complete registration{' '}
+              <span className="hero__headline--accent">without the long lines.</span>
+            </h1>
+            <p className="hero__desc">
+              Submit your information, follow every required campus clearance, and see
+              exactly what needs your attention from one secure portal.
+            </p>
+            <div className="hero__actions">
+              <button
+                type="button"
+                className="btn-lp btn-lp--primary"
+                onClick={() => onNavigate('register')}
+              >
+                Start Registration
+              </button>
+              <a href="#how-it-works" className="btn-lp btn-lp--outline">
+                See How It Works
+              </a>
+            </div>
+            <p className="hero__signin">
+              Already started?{' '}
+              <button
+                type="button"
+                className="hero__signin-link"
+                onClick={() => onNavigate('login')}
+              >
+                Sign in to continue.
+              </button>
+            </p>
+          </div>
+
+          <div className="hero__visual">
+            <div className="hero__blob">
+              <div className="hero__blob-shape hero__blob-shape--back" />
+              <div className="hero__blob-shape hero__blob-shape--mid" />
+              <div className="hero__blob-outline" />
+              <div className="hero__blob-photo">
+                <img
+                  className="hero__photo"
+                  src={campusHero}
+                  alt="Livingstone College students with President Anthony Davis at a campus event"
+                />
+              </div>
+            </div>
+            <div className="hero__status-card">
+              <p className="hero__status-eyebrow">Fall Registration</p>
+              <p className="hero__status-headline">5 of 7 offices cleared</p>
+              <div className="progress-bar">
+                <div className="progress-bar__fill" style={{ width: '71%' }} />
+              </div>
+              <p className="hero__status-next">Next step: <span>Financial Aid</span></p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ============ Stats bar ============ */}
+      <section className="stats-bar" aria-label="Registration portal at a glance">
+        <div className="stats-bar__grid">
+          {statBar.map(({ value, label }) => (
+            <div key={label} className="stats-bar__item">
+              <p className="stats-bar__value">{value}</p>
+              <p className="stats-bar__label">{label}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ============ How it works ============ */}
+      <section className="how-it-works" id="how-it-works">
+        <div className="section-wrap">
+          <h2 className="section-heading">How registration works</h2>
+          <p className="section-subtext">
+            Complete the process through one connected portal instead of moving between
+            disconnected systems.
           </p>
-          <div className="hero__actions">
+          <div className="how-it-works__grid">
+            {howItWorksSteps.map(({ title, desc }, i) => (
+              <div key={title} className="how-step">
+                <span className="how-step__dot" aria-hidden="true" />
+                <p className="how-step__eyebrow">Step {i + 1}</p>
+                <h3 className="how-step__title">{title}</h3>
+                <p className="how-step__desc">{desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ============ Status preview mockup ============ */}
+      <section className="status-preview" aria-label="Sample registration status preview">
+        <div className="section-wrap">
+          <h2 className="section-heading">See exactly where your registration stands.</h2>
+          <p className="section-subtext">
+            No guessing, no disconnected forms, and no uncertainty about what comes next.
+          </p>
+
+          <div className="status-window">
+            <div className="status-window__bar">
+              <span className="status-window__dot" />
+              <span className="status-window__dot" />
+              <span className="status-window__dot" />
+              <span className="status-window__url">portal.livingstone.edu/registration</span>
+            </div>
+
+            <div className="status-window__body">
+              <div className="status-summary">
+                <p className="status-summary__eyebrow">Fall 2026 Registration</p>
+                <p className="status-summary__percent">71% complete</p>
+                <p className="status-summary__note">5 of 7 offices cleared</p>
+                <div className="progress-bar progress-bar--lg">
+                  <div className="progress-bar__fill" style={{ width: '71%' }} />
+                </div>
+                <p className="status-summary__deadline">
+                  Registration deadline &mdash; Friday, September 11, 2026
+                </p>
+                <div className="status-alert">
+                  <span className="status-alert__icon" aria-hidden="true">!</span>
+                  <span>
+                    <span className="status-alert__title">Action required &mdash; Financial Aid</span>
+                    <span className="status-alert__desc">Submit your verification worksheet to continue.</span>
+                  </span>
+                </div>
+              </div>
+
+              <div className="status-offices">
+                <div className="status-offices__header">
+                  <span>Office</span>
+                  <span>Status</span>
+                </div>
+                {officeStatuses.map(({ name, status }) => (
+                  <div key={name} className="status-offices__row">
+                    <span>{name}</span>
+                    <span className={`status-badge status-badge--${status.modifier}`}>
+                      <span aria-hidden="true">{status.glyph}</span>
+                      {status.label}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ============ Benefits ============ */}
+      <section className="benefits" id="benefits">
+        <div className="section-wrap">
+          <h2 className="section-heading">Registration made clearer for everyone.</h2>
+          <div className="benefits__grid">
+            {benefits.map(({ iconKey, title, desc, circle }) => (
+              <div key={title} className="benefit">
+                <span className="benefit__icon">
+                  <BenefitIcon iconKey={iconKey} circle={circle} />
+                </span>
+                <span>
+                  <span className="benefit__title">{title}</span>
+                  <span className="benefit__desc">{desc}</span>
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ============ Offices ============ */}
+      <section className="offices" id="offices">
+        <div className="section-wrap">
+          <h2 className="section-heading">One portal. Seven connected offices.</h2>
+          <p className="section-subtext">
+            Each office reviews the requirements assigned to it while students can follow
+            the complete registration process.
+          </p>
+          <div className="offices__grid">
+            {officeNames.map((name) => (
+              <div key={name} className="office-card">
+                <span className="office-card__dot" aria-hidden="true" />
+                <span className="office-card__name">{name}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ============ FAQs ============ */}
+      <section className="faqs" id="faqs">
+        <div className="section-wrap section-wrap--narrow">
+          <h2 className="section-heading">Frequently asked questions</h2>
+          <div className="faqs__list">
+            {faqs.map((faq, i) => (
+              <FaqItem
+                key={faq.q}
+                faq={faq}
+                index={i}
+                isOpen={openFaq === i}
+                onToggle={() => setOpenFaq((cur) => (cur === i ? -1 : i))}
+              />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ============ CTA ============ */}
+      <section className="cta" id="signin">
+        <div className="section-wrap cta__inner">
+          <h2 className="cta__heading">Ready to complete your registration?</h2>
+          <p className="cta__desc">
+            Sign in to continue your registration and see what requires your attention.
+          </p>
+          <div className="cta__actions">
             <button
               type="button"
-              className="btn btn--primary"
+              className="btn-lp btn-lp--primary"
               onClick={() => onNavigate('register')}
             >
               Start Registration
             </button>
-            <button
-              type="button"
-              className="btn btn--outline"
-              onClick={() => onNavigate('admin')}
-            >
-              View Admin Dashboard
-            </button>
-          </div>
-        </div>
-
-        <div className="portal-preview">
-          <div className="portal-preview__header">
-            <h2 className="portal-preview__title">Portal Preview</h2>
-            <span className="portal-preview__badge">Active</span>
-          </div>
-
-          <div className="portal-preview__steps">
-            {previewSteps.map(({ number, title, status }) => (
-              <div key={number} className="preview-step">
-                <div className="preview-step__row">
-                  <StepIndicator number={number} status={status} />
-                  <div className="preview-step__info">
-                    <span className="preview-step__title">{title}</span>
-                    <span className={`preview-step__status preview-step__status--${status}`}>
-                      {STATUS_LABELS[status]}
-                    </span>
-                  </div>
-                </div>
-                <div className="step-progress">
-                  <div className={`step-progress__fill step-progress__fill--${status}`} />
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <p className="portal-preview__queue">Live Queue: 0 mins</p>
-        </div>
-      </section>
-
-      <section className="stats">
-        {stats.map(({ iconKey, headline, label }) => (
-          <div key={label} className="stat-card">
-            <div className="stat-card__icon">
-              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                <path d={STAT_ICON_PATHS[iconKey]} />
-              </svg>
-            </div>
-            <span className="stat-card__headline">{headline}</span>
-            <span className="stat-card__label">{label}</span>
-          </div>
-        ))}
-      </section>
-
-      {/* Benefit Cards */}
-      <section className="benefits">
-        <div className="benefits__grid">
-          {benefitCards.map(({ iconKey, title, description, linkText }) => (
-            <div key={title} className="benefit-card">
-              <div className="benefit-card__icon">
-                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                  <path d={BENEFIT_ICON_PATHS[iconKey]} />
-                </svg>
-              </div>
-              <h3 className="benefit-card__title">{title}</h3>
-              <p className="benefit-card__desc">{description}</p>
-              <a href="#" className="benefit-card__link">{linkText}</a>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Campus Image Banner */}
-      <section className="campus-banner">
-        <div className="campus-banner__overlay">
-          <div className="campus-banner__content">
-            <h2 className="campus-banner__heading">Dedicated to Academic Excellence</h2>
-            <p className="campus-banner__text">
-              Join the students moving their academic registration experience into a secure digital workflow.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="site-footer">
-        <div className="footer__brand">
-          <span className="footer__name">Livingstone College</span>
-          <span className="footer__copy">© 2026 Livingstone College Student Registration Portal</span>
-        </div>
-        <nav className="footer__links" aria-label="Footer navigation">
-          {footerLinks.map(({ label, href }) => (
-            <a key={label} href={href} className="footer-link">
-              {label}
+            <a href="#contact" className="btn-lp btn-lp--outline">
+              Get Help
             </a>
-          ))}
-        </nav>
+          </div>
+        </div>
+      </section>
+
+      {/* ============ Footer ============ */}
+      <footer className="site-footer" id="contact">
+        <div className="section-wrap">
+          <div className="site-footer__grid">
+            <div className="site-footer__brand">
+              <div className="site-footer__brand-row">
+                <span className="site-footer__mark">
+                  <img src={lcMark} alt="" />
+                </span>
+                <span>
+                  <span className="site-footer__name">Livingstone College</span>
+                  <span className="site-footer__tagline">Student Registration &amp; Clearance Portal</span>
+                </span>
+              </div>
+              <p className="site-footer__address">
+                701 W. Monroe Street<br />
+                Salisbury, NC 28144<br />
+                704-216-6001<br />
+                <a href="mailto:info@livingstone.edu">info@livingstone.edu</a>
+              </p>
+            </div>
+
+            <div>
+              <p className="site-footer__heading">Portal</p>
+              <ul className="site-footer__links">
+                <li><button type="button" onClick={() => onNavigate('login')}>Sign In</button></li>
+                <li><a href="#contact">Registration Help</a></li>
+                <li><a href="#faqs">FAQs</a></li>
+                <li><a href="#contact">Technical Support</a></li>
+              </ul>
+            </div>
+
+            <div>
+              <p className="site-footer__heading">Student resources</p>
+              <ul className="site-footer__links">
+                <li><a href="#offices">Registrar</a></li>
+                <li><a href="#offices">Financial Aid</a></li>
+                <li><a href="#offices">Residence Life</a></li>
+                <li><a href="#offices">Public Safety</a></li>
+              </ul>
+            </div>
+
+            <div>
+              <p className="site-footer__heading">College</p>
+              <ul className="site-footer__links">
+                <li><a href="#top">Livingstone College</a></li>
+                <li><a href="#top">Academic Calendar</a></li>
+                <li><a href="#top">Blackboard</a></li>
+                <li><a href="#top">JICS</a></li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="site-footer__bottom">
+            <a href="#top">Privacy</a>
+            <a href="#top">Accessibility</a>
+            <span className="site-footer__copy">&copy; 2026 Livingstone College. All rights reserved.</span>
+          </div>
+        </div>
       </footer>
     </div>
   )

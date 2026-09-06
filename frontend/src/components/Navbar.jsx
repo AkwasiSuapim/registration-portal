@@ -1,4 +1,5 @@
 import NotificationBell from './NotificationBell'
+import lcLogo from '../assets/landing/lc-logo.png'
 
 // Nav items that always appear in the centre of the navbar.
 // The Register item gets a blue pill style via navbar__button--register.
@@ -8,14 +9,6 @@ const navItems = [
   { page: 'student-portal', label: 'Student Portal'  },
   { page: 'admin',          label: 'Admin Dashboard' },
 ]
-
-function GraduationCapIcon() {
-  return (
-    <svg className="brand-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3L1 9l11 6 9-4.91V17h2V9L12 3z" />
-    </svg>
-  )
-}
 
 function Navbar({ currentPage, onNavigate, currentSession, onLogout }) {
   // role_name comes straight from the backend (GET /auth/me / login
@@ -29,7 +22,7 @@ function Navbar({ currentPage, onNavigate, currentSession, onLogout }) {
       {/* Brand */}
       <div className="navbar__brand">
         <div className="navbar__brand-icon">
-          <GraduationCapIcon />
+          <img className="brand-icon" src={lcLogo} alt="Livingstone College logo" />
         </div>
         <div className="navbar__brand-text">
           <span className="navbar__brand-name">Livingstone College</span>

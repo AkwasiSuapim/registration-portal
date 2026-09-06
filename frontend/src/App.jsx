@@ -46,6 +46,7 @@ function App() {
   const [currentPage, setCurrentPage]           = useState('home')
   const [currentSession, setCurrentSession]     = useState(null)
   const [restoringSession, setRestoringSession] = useState(true)
+  const [sessionExpired, setSessionExpired]     = useState(false)
 
   // Restore session on load — if a token was saved from a previous
   // visit, ask the backend who it belongs to via GET /auth/me. If the
@@ -67,6 +68,7 @@ function App() {
   useEffect(() => {
     const handleSessionExpired = () => {
       setCurrentSession(null)
+      setSessionExpired(true)
       setCurrentPage('login')
     }
     window.addEventListener('auth:session-expired', handleSessionExpired)
@@ -99,6 +101,8 @@ function App() {
           <Login
             onNavigate={setCurrentPage}
             onLogin={handleLogin}
+            sessionExpired={sessionExpired}
+            onDismissSessionExpired={() => setSessionExpired(false)}
           />
         )
 
