@@ -6,6 +6,8 @@ backend/.env
 # Python virtual environments
 venv/
 backend/venv/
+.venv/
+backend/.venv/
 
 # Uploaded files
 uploads/

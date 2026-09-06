@@ -10,5 +10,5 @@ bcrypt
 python-multipart
 email-validator
 pytest
-httpx2
+httpx
 pytest-cov
