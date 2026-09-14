@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import lcMark from '../assets/landing/lc-logo.png'
+import { STUDENT_REGISTRATION_PATH } from '../utils/routes'
 import campusHero from '../assets/landing/campus-hero.jpg'
 
 /* -------------------------------------------------------
@@ -173,7 +173,7 @@ function Home({ onNavigate }) {
               <button
                 type="button"
                 className="btn-lp btn-lp--primary"
-                onClick={() => onNavigate('register')}
+                onClick={() => onNavigate(STUDENT_REGISTRATION_PATH)}
               >
                 Start Registration
               </button>
@@ -186,7 +186,7 @@ function Home({ onNavigate }) {
               <button
                 type="button"
                 className="hero__signin-link"
-                onClick={() => onNavigate('login')}
+                onClick={() => onNavigate('/login')}
               >
                 Sign in to continue.
               </button>
@@ -375,7 +375,7 @@ function Home({ onNavigate }) {
             <button
               type="button"
               className="btn-lp btn-lp--primary"
-              onClick={() => onNavigate('register')}
+              onClick={() => onNavigate(STUDENT_REGISTRATION_PATH)}
             >
               Start Registration
             </button>
@@ -386,66 +386,6 @@ function Home({ onNavigate }) {
         </div>
       </section>
 
-      {/* ============ Footer ============ */}
-      <footer className="site-footer" id="contact">
-        <div className="section-wrap">
-          <div className="site-footer__grid">
-            <div className="site-footer__brand">
-              <div className="site-footer__brand-row">
-                <span className="site-footer__mark">
-                  <img src={lcMark} alt="" />
-                </span>
-                <span>
-                  <span className="site-footer__name">Livingstone College</span>
-                  <span className="site-footer__tagline">Student Registration &amp; Clearance Portal</span>
-                </span>
-              </div>
-              <p className="site-footer__address">
-                701 W. Monroe Street<br />
-                Salisbury, NC 28144<br />
-                704-216-6001<br />
-                <a href="mailto:info@livingstone.edu">info@livingstone.edu</a>
-              </p>
-            </div>
-
-            <div>
-              <p className="site-footer__heading">Portal</p>
-              <ul className="site-footer__links">
-                <li><button type="button" onClick={() => onNavigate('login')}>Sign In</button></li>
-                <li><a href="#contact">Registration Help</a></li>
-                <li><a href="#faqs">FAQs</a></li>
-                <li><a href="#contact">Technical Support</a></li>
-              </ul>
-            </div>
-
-            <div>
-              <p className="site-footer__heading">Student resources</p>
-              <ul className="site-footer__links">
-                <li><a href="#offices">Registrar</a></li>
-                <li><a href="#offices">Financial Aid</a></li>
-                <li><a href="#offices">Residence Life</a></li>
-                <li><a href="#offices">Public Safety</a></li>
-              </ul>
-            </div>
-
-            <div>
-              <p className="site-footer__heading">College</p>
-              <ul className="site-footer__links">
-                <li><a href="#top">Livingstone College</a></li>
-                <li><a href="#top">Academic Calendar</a></li>
-                <li><a href="#top">Blackboard</a></li>
-                <li><a href="#top">JICS</a></li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="site-footer__bottom">
-            <a href="#top">Privacy</a>
-            <a href="#top">Accessibility</a>
-            <span className="site-footer__copy">&copy; 2026 Livingstone College. All rights reserved.</span>
-          </div>
-        </div>
-      </footer>
     </div>
   )
 }

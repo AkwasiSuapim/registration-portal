@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,300..800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#E8F0F3;color:#15191C;font-family:"Source Sans 3","Helvetica Neue",Helvetica,Arial,sans-serif;font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4,p{margin:0;padding:0}
+a{color:#2F5A6B;text-decoration:none}
+a:hover{color:#15191C;text-decoration:underline}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
+input::placeholder,textarea::placeholder{color:#8A959B}
+:focus-visible{outline:3px solid #8CB0BF;outline-offset:2px}
+@keyframes lcSpin{to{transform:rotate(360deg)}}
+@keyframes lcShimmer{0%{opacity:.55}50%{opacity:1}100%{opacity:.55}}
+@keyframes lcToast{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.001ms !important;transition-duration:.001ms !important}}
+</style>
+</helmet>
+
+<div style="width:100%;max-width:{{ frameWidth }};margin:0 auto;min-height:100vh;display:flex;flex-direction:column;background:#E8F0F3">
+
+  <header style="position:sticky;top:0;z-index:40;background:#FFFFFF;border-bottom:1px solid #D3DEE2;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:10px clamp(14px,2.6vw,28px)">
+    <div style="display:flex;align-items:center;gap:11px;min-width:0">
+      <img src="assets/lc-mark.png" alt="" aria-hidden="true" style="width:38px;height:38px;border-radius:9px;display:block;flex:none">
+      <div style="display:flex;flex-direction:column;min-width:0">
+        <span style="font-size:15px;font-weight:700;letter-spacing:-0.01em;line-height:1.25;white-space:nowrap">Livingstone College</span>
+        <span style="font-size:12.5px;color:#5D6870;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Student Registration Portal</span>
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:8px;flex:none">
+      <button type="button" onClick="{{ openNotifications }}" aria-label="Notifications, 2 unread" style="position:relative;height:40px;padding:0 12px;display:flex;align-items:center;justify-content:center;border:1px solid #D3DEE2;background:#FFFFFF;border-radius:10px" style-hover="background:#DCEAF0;border-color:#8CB0BF">
+        <span aria-hidden="true" style="display:block;font-size:11px;font-weight:800;letter-spacing:.06em;color:#15191C;line-height:1">ALERTS</span>
+        <span aria-hidden="true" style="position:absolute;top:-5px;right:-5px;min-width:19px;height:19px;padding:0 4px;border-radius:20px;background:#B4342E;border:2px solid #FFFFFF;color:#FFFFFF;font-size:11px;font-weight:800;line-height:15px;text-align:center">2</span>
+      </button>
+
+      <div style="position:relative">
+        <button type="button" onClick="{{ toggleMenu }}" aria-expanded="{{ menuOpen }}" style="display:flex;align-items:center;gap:9px;padding:5px 10px 5px 6px;border:1px solid #D3DEE2;background:#FFFFFF;border-radius:10px;text-align:left" style-hover="background:#DCEAF0;border-color:#8CB0BF">
+          <span aria-hidden="true" style="width:30px;height:30px;border-radius:50%;background:#DCEAF0;border:1px solid #C9DAE2;color:#2F5A6B;font-size:12.5px;font-weight:800;display:flex;align-items:center;justify-content:center;flex:none">FA</span>
+          <span style="display:flex;flex-direction:column">
+            <span style="font-size:13.5px;font-weight:700;line-height:1.2;white-space:nowrap">Francis Amoah</span>
+            <span style="font-size:11.5px;color:#5D6870;line-height:1.25;white-space:nowrap">ID 20261184</span>
+          </span>
+          <span aria-hidden="true" style="font-size:10px;color:#5D6870;line-height:1">&#9660;</span>
+        </button>
+        <sc-if value="{{ menuOpen }}" hint-placeholder-val="{{ false }}">
+          <div role="menu" style="position:absolute;top:52px;right:0;width:224px;background:#FFFFFF;border:1px solid #D3DEE2;border-radius:12px;box-shadow:0 16px 34px rgba(16,26,31,.14);padding:6px;display:flex;flex-direction:column;gap:2px;z-index:50">
+            <div style="padding:8px 10px 9px;border-bottom:1px solid #D3DEE2;margin-bottom:4px">
+              <div style="font-size:13.5px;font-weight:700">Francis Amoah</div>
+              <div style="font-size:12.5px;color:#5D6870">famoah@livingstone.edu</div>
+            </div>
+            <button type="button" role="menuitem" onClick="{{ goHelp }}" style="text-align:left;padding:9px 10px;border:0;background:transparent;border-radius:8px;font-size:14.5px;color:#15191C" style-hover="background:#E8F0F3">My profile</button>
+            <button type="button" role="menuitem" onClick="{{ goHelp }}" style="text-align:left;padding:9px 10px;border:0;background:transparent;border-radius:8px;font-size:14.5px;color:#15191C" style-hover="background:#E8F0F3">Account settings</button>
+            <button type="button" role="menuitem" onClick="{{ toggleMenu }}" style="text-align:left;padding:9px 10px;border:0;background:transparent;border-radius:8px;font-size:14.5px;font-weight:700;color:#B4342E;border-top:1px solid #D3DEE2;margin-top:4px" style-hover="background:#FBF0EF">Log out</button>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+  </header>
+
+  <div style="flex:1;display:flex;align-items:flex-start;gap:0;width:100%">
+
+    <nav aria-label="Student sections" style="display:{{ sidebarDisplay }};position:sticky;top:59px;flex:none;width:232px;align-self:stretch;background:#F4F8F9;border-right:1px solid #D3DEE2;padding:16px 12px;flex-direction:column;gap:3px;min-height:calc(100vh - 59px)">
+      <span style="font-size:11.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:#5D6870;padding:0 10px 8px">Registration</span>
+      <sc-for list="{{ navItems }}" as="item" hint-placeholder-count="6">
+        <button type="button" onClick="{{ item.onClick }}" aria-current="{{ item.current }}" style="display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:10px 11px;border:1px solid {{ item.border }};border-radius:10px;background:{{ item.bg }};color:{{ item.fg }};font-size:15px;font-weight:{{ item.weight }};min-height:44px" style-hover="background:#DCEAF0">
+          <span aria-hidden="true" style="width:7px;height:7px;border-radius:2px;background:{{ item.dot }};flex:none"></span>
+          {{ item.label }}
+          <sc-if value="{{ item.badge }}" hint-placeholder-val="{{ false }}">
+            <span style="margin-left:auto;font-size:11.5px;font-weight:800;color:#8A5A12;background:#FDF3E3;border:1px solid #EBD3A8;border-radius:20px;padding:1px 8px">1</span>
+          </sc-if>
+        </button>
+      </sc-for>
+
+      <div style="margin-top:auto;padding:12px 11px 0;border-top:1px solid #D3DEE2">
+        <div style="font-size:12.5px;color:#5D6870;line-height:1.4">Fall 2026 deadline</div>
+        <div style="font-size:14px;font-weight:700">Friday, September 11</div>
+      </div>
+    </nav>
+
+    <main style="flex:1;min-width:0;padding:clamp(16px,2.4vw,30px) clamp(14px,2.6vw,32px) 40px;display:flex;flex-direction:column;gap:20px;max-width:1120px;width:100%;margin:0 auto">
+
+      <sc-if value="{{ showToast }}" hint-placeholder-val="{{ false }}">
+        <div role="status" style="display:flex;align-items:flex-start;gap:10px;background:#E8F3EC;border:1px solid #BFDCCB;border-radius:12px;padding:12px 14px;animation:lcToast .22s ease">
+          <span aria-hidden="true" style="flex:none;width:22px;height:22px;border-radius:50%;background:#2F6B4F;color:#FFFFFF;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center">&#10003;</span>
+          <div style="display:flex;flex-direction:column">
+            <span style="font-size:14.5px;font-weight:700;color:#1E4A36">{{ toastTitle }}</span>
+            <span style="font-size:14px;color:#2F5546">{{ toastBody }}</span>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ showError }}" hint-placeholder-val="{{ false }}">
+        <div role="alert" style="display:flex;align-items:flex-start;gap:11px;background:#FBF0EF;border:1px solid #E7BDBA;border-radius:12px;padding:14px 15px">
+          <span aria-hidden="true" style="flex:none;width:22px;height:22px;border-radius:50%;background:#B4342E;color:#FFFFFF;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center">!</span>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <span style="font-size:15px;font-weight:700;color:#8E2A25">We could not load your registration status</span>
+            <span style="font-size:14.5px;color:#5D6870;text-wrap:pretty">The portal could not reach the clearance service. Your submitted information is safe. Try again, or contact the Registrar&rsquo;s Office if this continues.</span>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button type="button" onClick="{{ retry }}" style="padding:9px 15px;border:1px solid #D3DEE2;background:#FFFFFF;border-radius:10px;font-size:14.5px;font-weight:700;min-height:40px" style-hover="border-color:#8CB0BF;background:#DCEAF0">Try again</button>
+              <button type="button" onClick="{{ goHelp }}" style="padding:9px 15px;border:1px solid transparent;background:transparent;border-radius:10px;font-size:14.5px;font-weight:700;color:#2F5A6B;min-height:40px" style-hover="background:#DCEAF0">Contact support</button>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isLoading }}" hint-placeholder-val="{{ false }}">
+        <div aria-busy="true" aria-live="polite" style="display:flex;flex-direction:column;gap:16px">
+          <div style="display:flex;align-items:center;gap:10px;font-size:14.5px;color:#5D6870"><span aria-hidden="true" style="width:16px;height:16px;border:2px solid #D3DEE2;border-top-color:#8CB0BF;border-radius:50%;animation:lcSpin .7s linear infinite;display:block"></span> Loading your registration status&hellip;</div>
+          <div style="height:120px;background:#FFFFFF;border:1px solid #D3DEE2;border-radius:14px;animation:lcShimmer 1.4s ease-in-out infinite"></div>
+          <div style="height:150px;background:#FFFFFF;border:1px solid #D3DEE2;border-radius:14px;animation:lcShimmer 1.4s ease-in-out infinite"></div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px">
+            <div style="height:82px;background:#FFFFFF;border:1px solid #D3DEE2;border-radius:12px;animation:lcShimmer 1.4s ease-in-out infinite"></div>
+            <div style="height:82px;background:#FFFFFF;border:1px solid #D3DEE2;border-radius:12px;animation:lcShimmer 1.4s ease-in-out infinite"></div>
+            <div style="height:82px;background:#FFFFFF;border:1px solid #D3DEE2;border-radius:12px;animation:lcShimmer 1.4s ease-in-out infinite"></div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ showOverview }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;flex-direction:column;gap:20px">
+
+          <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap">
+            <div style="display:flex;flex-direction:column;gap:4px;min-width:260px">
+              <h1 style="font-size:clamp(24px,3.2vw,30px);font-weight:700;letter-spacing:-0.02em;line-height:1.2">Good afternoon, Francis</h1>
+              <p style="font-size:16.5px;color:#5D6870;text-wrap:pretty">Here is where your Fall 2026 registration stands.</p>
+            </div>
+            <button type="button" onClick="{{ goRegistration }}" style="padding:12px 22px;border:1px solid #7BA2B3;border-radius:11px;background:#8CB0BF;color:#0B1216;font-size:16px;font-weight:700;min-height:48px" style-hover="background:#9DBDC9" style-active="background:#7BA2B3">Continue Registration</button>
+          </div>
+
+          <section aria-labelledby="lc-stage-h" style="background:#FFFFFF;border:1px solid #D3DEE2;border-radius:14px;padding:clamp(16px,2.2vw,22px);display:flex;flex-direction:column;gap:18px">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap">
+              <div>
+                <h2 id="lc-stage-h" style="font-size:18px;font-weight:700;letter-spacing:-0.01em">Fall 2026 registration progress</h2>
+                <p style="font-size:14.5px;color:#5D6870">Five of seven office clearances approved</p>
+              </div>
+              <div style="text-align:right">
+                <div style="font-size:26px;font-weight:800;letter-spacing:-0.02em;line-height:1.1">71%</div>
+                <div style="font-size:13px;color:#5D6870;text-transform:uppercase;letter-spacing:.07em;font-weight:700">complete</div>
+              </div>
+            </div>
+
+            <div style="height:10px;background:#DCEAF0;border:1px solid #D3DEE2;border-radius:20px;overflow:hidden" role="img" aria-label="Registration 71 percent complete">
+              <div style="width:71%;height:100%;background:#8CB0BF;border-radius:20px"></div>
+            </div>
+
+            <ol style="list-style:none;margin:0;padding:0;display:flex;gap:12px;flex-wrap:wrap">
+              <sc-for list="{{ stages }}" as="st" hint-placeholder-count="3">
+                <li style="flex:1 1 240px;min-width:210px;display:flex;gap:12px;align-items:flex-start;padding:14px;border:1px solid {{ st.border }};border-radius:12px;background:{{ st.bg }}">
+                  <span aria-hidden="true" style="flex:none;width:28px;height:28px;border-radius:50%;background:{{ st.iconBg }};border:1px solid {{ st.iconBorder }};color:{{ st.iconFg }};font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center">{{ st.icon }}</span>
+                  <div style="display:flex;flex-direction:column;gap:2px;min-width:0">
+                    <span style="font-size:11.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:{{ st.labelFg }}">{{ st.tag }}</span>
+                    <span style="font-size:15.5px;font-weight:700;line-height:1.3">{{ st.title }}</span>
+                    <span style="font-size:14px;color:#5D6870;line-height:1.4;text-wrap:pretty">{{ st.note }}</span>
+                  </div>
+                </li>
+              </sc-for>
+            </ol>
+
+            <div style="display:flex;gap:9px;flex-wrap:wrap;padding-top:2px">
+              <button type="button" onClick="{{ goRegistration }}" style="padding:10px 18px;border:1px solid #7BA2B3;border-radius:10px;background:#8CB0BF;color:#0B1216;font-size:15px;font-weight:700;min-height:44px" style-hover="background:#9DBDC9">Continue to clearances</button>
+              <button type="button" onClick="{{ goRegistration }}" style="padding:10px 18px;border:1px solid #D3DEE2;border-radius:10px;background:#FFFFFF;color:#15191C;font-size:15px;font-weight:700;min-height:44px" style-hover="border-color:#8CB0BF;background:#DCEAF0">Return to student information</button>
+            </div>
+          </section>
+
+          <section aria-labelledby="lc-next-h" style="background:#FDF3E3;border:1px solid #EBD3A8;border-left:none;border-radius:14px;padding:clamp(16px,2.2vw,22px);display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap">
+            <span aria-hidden="true" style="flex:none;width:34px;height:34px;border-radius:50%;background:#8A5A12;color:#FFFFFF;font-size:19px;font-weight:800;display:flex;align-items:center;justify-content:center">!</span>
+            <div style="flex:1 1 320px;display:flex;flex-direction:column;gap:6px;min-width:240px">
+              <span style="font-size:12px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:#8A5A12">Next action</span>
+              <h2 id="lc-next-h" style="font-size:clamp(19px,2.5vw,22px);font-weight:700;letter-spacing:-0.01em">Action required &mdash; Financial Aid</h2>
+              <p style="font-size:15.5px;color:#4A4033;text-wrap:pretty;max-width:62ch">Verify your financial aid information or contact the office if you need assistance. Your registration cannot move to final review until this is resolved.</p>
+              <p style="font-size:14px;color:#6B5B44">Requested September 2, 2026 &middot; Respond before September 11</p>
+            </div>
+            <div style="display:flex;gap:9px;flex-wrap:wrap;align-items:center">
+              <button type="button" onClick="{{ viewFinancialAid }}" style="padding:12px 20px;border:1px solid #15191C;border-radius:11px;background:#15191C;color:#FFFFFF;font-size:15.5px;font-weight:700;min-height:48px" style-hover="background:#243038">View Requirement</button>
+              <button type="button" onClick="{{ goHelp }}" style="padding:12px 18px;border:1px solid #C9B48A;border-radius:11px;background:#FFFFFF;color:#15191C;font-size:15.5px;font-weight:700;min-height:48px" style-hover="background:#FBF6EC">Contact office</button>
+            </div>
+          </section>
+
+          <section aria-labelledby="lc-off-h" style="background:#FFFFFF;border:1px solid #D3DEE2;border-radius:14px;overflow:hidden">
+            <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:16px clamp(14px,2vw,20px);border-bottom:1px solid #D3DEE2">
+              <div>
+                <h2 id="lc-off-h" style="font-size:18px;font-weight:700;letter-spacing:-0.01em">Office clearances</h2>
+                <p style="font-size:14.5px;color:#5D6870">Seven participating offices &middot; Fall 2026</p>
+              </div>
+              <button type="button" onClick="{{ goClearances }}" style="padding:8px 14px;border:1px solid #D3DEE2;background:#FFFFFF;border-radius:9px;font-size:14px;font-weight:700;min-height:40px" style-hover="border-color:#8CB0BF;background:#DCEAF0">View all clearances</button>
+            </div>
+            <ul style="list-style:none;margin:0;padding:0">
+              <sc-for list="{{ offices }}" as="o" hint-placeholder-count="7">
+                <li style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:13px clamp(14px,2vw,20px);border-bottom:1px solid #DEE9ED">
+                  <span aria-hidden="true" style="flex:none;width:26px;height:26px;border-radius:50%;background:{{ o.iconBg }};border:1px solid {{ o.iconBorder }};color:{{ o.iconFg }};font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center">{{ o.icon }}</span>
+                  <span style="flex:1 1 150px;min-width:130px;font-size:15.5px;font-weight:700">{{ o.name }}</span>
+                  <span style="flex:1 1 190px;min-width:150px;font-size:14px;color:#5D6870">{{ o.updated }}</span>
+                  <span style="display:inline-flex;align-items:center;gap:6px;font-size:13.5px;font-weight:700;color:{{ o.chipFg }};background:{{ o.chipBg }};border:1px solid {{ o.chipBorder }};border-radius:20px;padding:3px 11px;flex:none">{{ o.statusLabel }}</span>
+                  <button type="button" onClick="{{ o.onView }}" style="flex:none;padding:7px 13px;border:1px solid #D3DEE2;background:#FFFFFF;border-radius:9px;font-size:13.5px;font-weight:700;min-height:38px" style-hover="border-color:#8CB0BF;background:#DCEAF0">View details</button>
+                </li>
+              </sc-for>
+            </ul>
+          </section>
+
+          <section aria-labelledby="lc-rec-h" style="background:#FFFFFF;border:1px solid #D3DEE2;border-radius:14px;padding:clamp(16px,2.2vw,22px);display:flex;flex-direction:column;gap:16px">
+            <div>
+              <h2 id="lc-rec-h" style="font-size:18px;font-weight:700;letter-spacing:-0.01em">Registration Records</h2>
+              <p style="font-size:14.5px;color:#5D6870">Select a semester to review what you submitted and how each office responded.</p>
+            </div>
+
+            <sc-if value="{{ hasRecords }}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex;flex-direction:column;gap:16px">
+                <div role="tablist" aria-label="Semesters" style="display:flex;gap:8px;flex-wrap:wrap">
+                  <sc-for list="{{ semesters }}" as="s" hint-placeholder-count="3">
+                    <button type="button" role="tab" aria-selected="{{ s.selected }}" onClick="{{ s.onSelect }}" style="display:flex;flex-direction:column;gap:2px;text-align:left;padding:10px 15px;border:1px solid {{ s.border }};border-radius:11px;background:{{ s.bg }};min-height:44px;min-width:168px" style-hover="border-color:#8CB0BF">
+                      <span style="font-size:15px;font-weight:700;color:#15191C">{{ s.term }}</span>
+                      <span style="font-size:13px;font-weight:700;color:{{ s.tagFg }}">{{ s.tag }}</span>
+                    </button>
+                  </sc-for>
+                </div>
+
+                <div role="tabpanel" style="border:1px solid #D3DEE2;border-radius:12px;background:#F4F8F9;padding:clamp(14px,2vw,20px);display:flex;flex-direction:column;gap:18px">
+                  <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap">
+                    <div>
+                      <h3 style="font-size:17px;font-weight:700">{{ record.term }} registration</h3>
+                      <p style="font-size:14px;color:#5D6870">Application {{ record.appId }} &middot; Submitted {{ record.submitted }}</p>
+                    </div>
+                    <span style="display:inline-flex;align-items:center;gap:7px;font-size:13.5px;font-weight:700;color:{{ record.chipFg }};background:{{ record.chipBg }};border:1px solid {{ record.chipBorder }};border-radius:20px;padding:4px 12px">{{ record.statusLabel }}</span>
+                  </div>
+
+                  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px">
+                    <sc-for list="{{ record.info }}" as="f" hint-placeholder-count="6">
+                      <div style="display:flex;flex-direction:column;gap:1px;min-width:0">
+                        <span style="font-size:12.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#5D6870">{{ f.label }}</span>
+                        <span style="font-size:15px;font-weight:600;color:#15191C;text-wrap:pretty">{{ f.value }}</span>
+                      </div>
+                    </sc-for>
+                  </div>
+
+                  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px">
+                    <div style="display:flex;flex-direction:column;gap:8px">
+                      <h4 style="font-size:14px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:#5D6870">Submitted documents</h4>
+                      <ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px">
+                        <sc-for list="{{ record.docs }}" as="d" hint-placeholder-count="3">
+                          <li style="display:flex;align-items:center;gap:10px;justify-content:space-between;background:#FFFFFF;border:1px solid #D3DEE2;border-radius:10px;padding:9px 12px;flex-wrap:wrap">
+                            <span style="display:flex;flex-direction:column;min-width:0">
+                              <span style="font-size:14.5px;font-weight:700">{{ d.name }}</span>
+                              <span style="font-size:13px;color:#5D6870">{{ d.meta }}</span>
+                            </span>
+                            <span style="font-size:13px;font-weight:700;color:{{ d.chipFg }};background:{{ d.chipBg }};border:1px solid {{ d.chipBorder }};border-radius:20px;padding:2px 10px;flex:none">{{ d.status }}</span>
+                          </li>
+                        </sc-for>
+                      </ul>
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:8px">
+                      <h4 style="font-size:14px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:#5D6870">Clearance results</h4>
+                      <ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px">
+                        <sc-for list="{{ record.clearances }}" as="c" hint-placeholder-count="7">
+                          <li style="display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:14.5px;padding:6px 2px;border-bottom:1px solid #DEE9ED">
+                            <span style="font-weight:600">{{ c.name }}</span>
+                            <span style="display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:{{ c.chipFg }}">{{ c.icon }} {{ c.status }}</span>
+                          </li>
+                        </sc-for>
+                      </ul>
+                    </div>
+                  </div>
+
+                  <div>
+                    <button type="button" onClick="{{ viewSubmission }}" style="padding:11px 19px;border:1px solid #D3DEE2;background:#FFFFFF;border-radius:10px;font-size:15px;font-weight:700;min-height:44px" style-hover="border-color:#8CB0BF;background:#DCEAF0">View Full Submission</button>
+                  </div>
+                </div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ noRecords }}" hint-placeholder-val="{{ false }}">
+              <div style="border:1px dashed #BFCED4;border-radius:12px;background:#F4F8F9;padding:32px 20px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px">
+                <span aria-hidden="true" style="width:38px;height:38px;border-radius:10px;background:#DCEAF0;border:1px solid #C9DAE2"></span>
+                <h3 style="font-size:16.5px;font-weight:700">No previous submissions</h3>
+                <p style="font-size:14.5px;color:#5D6870;max-width:44ch;text-wrap:pretty">Once you submit a registration, that semester&rsquo;s record will appear here with your information, documents, and clearance results.</p>
+                <button type="button" onClick="{{ goRegistration }}" style="margin-top:4px;padding:10px 18px;border:1px solid #7BA2B3;border-radius:10px;background:#8CB0BF;color:#0B1216;font-size:15px;font-weight:700;min-height:44px" style-hover="background:#9DBDC9">Start registration</button>
+              </div>
+            </sc-if>
+          </section>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ showRegistration }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:18px">
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <button type="button" onClick="{{ goOverview }}" style="align-self:flex-start;padding:6px 2px;border:0;background:transparent;font-size:14.5px;font-weight:700;color:#2F5A6B" style-hover="text-decoration:underline">&#8592; Back to overview</button>
+            <h1 style="font-size:clamp(22px,3vw,28px);font-weight:700;letter-spacing:-0.02em">Fall 2026 registration form</h1>
+            <p style="font-size:16px;color:#5D6870">Step {{ stepNumber }} of 6 &middot; {{ stepTitle }} &middot; Progress saves as you go.</p>
+          </div>
+
+          <ol style="list-style:none;margin:0;padding:0;display:flex;gap:8px;flex-wrap:wrap">
+            <sc-for list="{{ formSteps }}" as="fs" hint-placeholder-count="6">
+              <li style="flex:1 1 160px;min-width:140px;display:flex;align-items:center;gap:9px;padding:10px 12px;border:1px solid {{ fs.border }};border-radius:11px;background:{{ fs.bg }}">
+                <span aria-hidden="true" style="flex:none;width:24px;height:24px;border-radius:50%;background:{{ fs.iconBg }};border:1px solid {{ fs.iconBorder }};color:{{ fs.iconFg }};font-size:12.5px;font-weight:800;display:flex;align-items:center;justify-content:center">{{ fs.icon }}</span>
+                <span style="display:flex;flex-direction:column;min-width:0">
+                  <span style="font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:{{ fs.tagFg }}">{{ fs.tag }}</span>
+                  <span style="font-size:14px;font-weight:700;line-height:1.25;text-wrap:pretty">{{ fs.title }}</span>
+                </span>
+              </li>
+            </sc-for>
+          </ol>
+
+          <sc-if value="{{ dirty }}" hint-placeholder-val="{{ false }}">
+            <div role="status" style="display:flex;align-items:center;gap:10px;background:#DEE9ED;border:1px solid #D3DDE2;border-radius:11px;padding:10px 13px">
+              <span aria-hidden="true" style="width:9px;height:9px;border-radius:50%;background:#4E6672;flex:none"></span>
+              <span style="font-size:14.5px;color:#3A464D">You have unsaved changes on this step. Use <strong>Save Draft</strong> before leaving, or your edits will be lost.</span>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ showValidation }}" hint-placeholder-val="{{ false }}">
+            <div role="alert" style="display:flex;gap:11px;align-items:flex-start;background:#FBF0EF;border:1px solid #E7BDBA;border-radius:11px;padding:12px 14px">
+              <span aria-hidden="true" style="flex:none;width:21px;height:21px;border-radius:50%;background:#B4342E;color:#FFFFFF;font-size:12.5px;font-weight:800;display:flex;align-items:center;justify-content:center">!</span>
+              <span style="font-size:14.5px;color:#8E2A25;font-weight:600">{{ validationSummary }}</span>
+            </div>
+          </sc-if>
+
+          <form onSubmit="{{ onFormSubmit }}" noValidate="{{ true }}" style="background:#FFFFFF;border:1px solid #D3DEE2;border-radius:14px;padding:clamp(16px,2.2vw,24px);display:flex;flex-direction:column;gap:18px">
+            <div>
+              <h2 style="font-size:18px;font-weight:700;letter-spacing:-0.01em">{{ stepTitle }}</h2>
+              <p style="font-size:14.5px;color:#5D6870">{{ stepHelp }} Fields marked <span style="color:#B4342E;font-weight:800">*</span> are required.</p>
+            </div>
+
+            <sc-if value="{{ showFields }}" hint-placeholder-val="{{ true }}">
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px">
+                <sc-for list="{{ fields }}" as="fl" hint-placeholder-count="5">
+                  <div style="display:flex;flex-direction:column;gap:6px;min-width:0">
+                    <label for="{{ fl.id }}" style="font-size:13.5px;font-weight:700;color:#15191C">{{ fl.label }}<span style="color:#B4342E">{{ fl.req }}</span></label>
+                    <sc-if value="{{ fl.isSelect }}" hint-placeholder-val="{{ false }}">
+                      <select id="{{ fl.id }}" value="{{ fl.value }}" onChange="{{ fl.onChange }}" aria-invalid="{{ fl.invalid }}" style="width:100%;height:46px;padding:0 12px;font-size:15.5px;color:#15191C;background:#FFFFFF;border:1px solid {{ fl.border }};border-radius:10px">
+                        <sc-for list="{{ fl.options }}" as="op" hint-placeholder-count="3">
+                          <option value="{{ op }}">{{ op }}</option>
+                        </sc-for>
+                      </select>
+                    </sc-if>
+                    <sc-if value="{{ fl.isText }}" hint-placeholder-val="{{ true }}">
+                      <input id="{{ fl.id }}" type="text" value="{{ fl.value }}" placeholder="{{ fl.placeholder }}" onChange="{{ fl.onChange }}" readOnly="{{ fl.readOnly }}" aria-invalid="{{ fl.invalid }}" style="width:100%;height:46px;padding:0 12px;font-size:15.5px;color:#15191C;background:{{ fl.inputBg }};border:1px solid {{ fl.border }};border-radius:10px" style-focus="border-color:#8CB0BF">
+                    </sc-if>
+                    <sc-if value="{{ fl.hasError }}" hint-placeholder-val="{{ false }}">
+                      <span style="font-size:13px;font-weight:600;color:#B4342E">{{ fl.error }}</span>
+                    </sc-if>
+                    <sc-if value="{{ fl.hasHelp }}" hint-placeholder-val="{{ false }}">
+                      <span style="font-size:13px;color:#5D6870">{{ fl.help }}</span>
+                    </sc-if>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ showDocsStep }}" hint-placeholder-val="{{ false }}">
+              <ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px">
+                <sc-for list="{{ uploads }}" as="u" hint-placeholder-count="3">
+                  <li style="display:flex;gap:13px;align-items:flex-start;flex-wrap:wrap;border:1px solid {{ u.border }};background:{{ u.bg }};border-radius:12px;padding:14px">
+                    <span aria-hidden="true" style="flex:none;width:26px;height:26px;border-radius:50%;background:{{ u.iconBg }};border:1px solid {{ u.iconBorder }};color:{{ u.iconFg }};font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center">{{ u.icon }}</span>
+                    <div style="flex:1 1 260px;min-width:220px;display:flex;flex-direction:column;gap:2px">
+                      <span style="font-size:15.5px;font-weight:700">{{ u.name }}<span style="color:#B4342E">{{ u.req }}</span></span>
+                      <span style="font-size:14px;color:#5D6870;text-wrap:pretty">{{ u.meta }}</span>
+                    </div>
+                    <span style="font-size:13px;font-weight:700;color:{{ u.chipFg }};background:{{ u.chipBg }};border:1px solid {{ u.chipBorder }};border-radius:20px;padding:3px 11px;flex:none">{{ u.status }}</span>
+                    <button type="button" onClick="{{ u.onAction }}" style="flex:none;padding:9px 15px;border:1px solid #D3DEE2;background:#FFFFFF;border-radius:9px;font-size:14px;font-weight:700;min-height:42px" style-hover="border-color:#8CB0BF;background:#DCEAF0">{{ u.action }}</button>
+                  </li>
+                </sc-for>
+              </ul>
+            </sc-if>
+
+            <sc-if value="{{ showReviewStep }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-direction:column;gap:14px">
+                <sc-for list="{{ reviewGroups }}" as="g" hint-placeholder-count="4">
+                  <div style="border:1px solid #D3DEE2;border-radius:12px;padding:14px;background:#F4F8F9">
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px;flex-wrap:wrap">
+                      <h3 style="font-size:15.5px;font-weight:700">{{ g.title }}</h3>
+                      <button type="button" onClick="{{ g.onEdit }}" style="padding:6px 12px;border:1px solid #D3DEE2;background:#FFFFFF;border-radius:8px;font-size:13.5px;font-weight:700;min-height:36px" style-hover="border-color:#8CB0BF;background:#DCEAF0">Edit</button>
+                    </div>
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px">
+                      <sc-for list="{{ g.rows }}" as="r" hint-placeholder-count="4">
+                        <div style="display:flex;flex-direction:column">
+                          <span style="font-size:12.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#5D6870">{{ r.label }}</span>
+                          <span style="font-size:15px;font-weight:600;text-wrap:pretty">{{ r.value }}</span>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </div>
+                </sc-for>
+                <label style="display:flex;gap:10px;align-items:flex-start;font-size:14.5px;color:#15191C;padding:4px 0;cursor:pointer">
+                  <input type="checkbox" checked="{{ certified }}" onChange="{{ toggleCertify }}" style="width:19px;height:19px;accent-color:#8CB0BF;margin:2px 0 0;flex:none">
+                  <span style="text-wrap:pretty">I certify that the information above is accurate and complete for Fall 2026 registration.</span>
+                </label>
+              </div>
+            </sc-if>
+
+            <div style="display:flex;gap:9px;flex-wrap:wrap;align-items:center;padding-top:4px;border-top:1px solid #DEE9ED">
+              <button type="button" onClick="{{ prevStep }}" disabled="{{ atFirstStep }}" style="padding:11px 18px;border:1px solid #D3DEE2;background:#FFFFFF;border-radius:10px;font-size:15px;font-weight:700;min-height:46px;color:{{ backFg }};margin-top:14px" style-hover="border-color:#8CB0BF;background:#DCEAF0">Back</button>
+              <button type="button" onClick="{{ saveDraft }}" style="padding:11px 18px;border:1px solid #D3DEE2;background:#FFFFFF;border-radius:10px;font-size:15px;font-weight:700;min-height:46px;margin-top:14px" style-hover="border-color:#8CB0BF;background:#DCEAF0">Save Draft</button>
+              <button type="submit" style="padding:11px 22px;border:1px solid #7BA2B3;background:#8CB0BF;color:#0B1216;border-radius:10px;font-size:15.5px;font-weight:700;min-height:46px;margin-top:14px;margin-left:auto" style-hover="background:#9DBDC9" style-active="background:#7BA2B3">{{ primaryLabel }}</button>
+            </div>
+          </form>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ showClearances }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:18px">
+          <sc-if value="{{ officeDetail }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:18px">
+              <button type="button" onClick="{{ closeOffice }}" style="align-self:flex-start;padding:6px 2px;border:0;background:transparent;font-size:14.5px;font-weight:700;color:#2F5A6B" style-hover="text-decoration:underline">&#8592; All clearances</button>
+              <div style="background:#FFFFFF;border:1px solid #D3DEE2;border-radius:14px;padding:clamp(16px,2.2vw,24px);display:flex;flex-direction:column;gap:18px">
+                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap">
+                  <div style="display:flex;flex-direction:column;gap:4px">
+                    <span style="font-size:12px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:#5D6870">Clearance detail &middot; Fall 2026</span>
+                    <h1 style="font-size:clamp(22px,3vw,28px);font-weight:700;letter-spacing:-0.02em">{{ detail.name }}</h1>
+                    <p style="font-size:15px;color:#5D6870">{{ detail.updated }}</p>
+                  </div>
+                  <span style="display:inline-flex;align-items:center;gap:7px;font-size:14px;font-weight:700;color:{{ detail.chipFg }};background:{{ detail.chipBg }};border:1px solid {{ detail.chipBorder }};border-radius:20px;padding:5px 13px">{{ detail.icon }} {{ detail.statusLabel }}</span>
+                </div>
+
+                <div style="border:1px solid {{ detail.noteBorder }};background:{{ detail.noteBg }};border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:5px">
+                  <span style="font-size:14px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:#5D6870">Office message</span>
+                  <p style="font-size:15.5px;text-wrap:pretty;max-width:70ch">{{ detail.message }}</p>
+                </div>
+
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px">
+                  <sc-for list="{{ detail.meta }}" as="m" hint-placeholder-count="4">
+                    <div style="display:flex;flex-direction:column">
+                      <span style="font-size:12.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#5D6870">{{ m.label }}</span>
+                      <span style="font-size:15px;font-weight:600;text-wrap:pretty">{{ m.value }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+
+                <div style="display:flex;flex-direction:column;gap:9px">
+                  <h2 style="font-size:15px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:#5D6870">Requirements</h2>
+                  <ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px">
+                    <sc-for list="{{ detail.requirements }}" as="rq" hint-placeholder-count="3">
+                      <li style="display:flex;gap:11px;align-items:flex-start;border:1px solid #D3DEE2;border-radius:11px;padding:12px;background:#F4F8F9;flex-wrap:wrap">
+                        <span aria-hidden="true" style="flex:none;width:24px;height:24px;border-radius:50%;background:{{ rq.iconBg }};border:1px solid {{ rq.iconBorder }};color:{{ rq.iconFg }};font-size:12.5px;font-weight:800;display:flex;align-items:center;justify-content:center">{{ rq.icon }}</span>
+                        <div style="flex:1 1 240px;min-width:200px;display:flex;flex-direction:column">
+                          <span style="font-size:15px;font-weight:700">{{ rq.name }}</span>
+                          <span style="font-size:14px;color:#5D6870;text-wrap:pretty">{{ rq.note }}</span>
+                        </div>
+                        <span style="font-size:13px;font-weight:700;color:{{ rq.chipFg }};background:{{ rq.chipBg }};border:1px solid {{ rq.chipBorder }};border-radius:20px;padding:3px 11px;flex:none">{{ rq.status }}</span>
+                      </li>
+                    </sc-for>
+                  </ul>
+                </div>
+
+                <div style="display:flex;gap:9px;flex-wrap:wrap">
+                  <button type="button" onClick="{{ goRegistration }}" style="padding:12px 20px;border:1px solid #7BA2B3;background:#8CB0BF;color:#0B1216;border-radius:11px;font-size:15.5px;font-weight:700;min-height:48px" style-hover="background:#9DBDC9">{{ detail.primary }}</button>
+                  <button type="button" onClick="{{ goHelp }}" style="padding:12px 18px;border:1px solid #D3DEE2;background:#FFFFFF;border-radius:11px;font-size:15.5px;font-weight:700;min-height:48px" style-hover="border-color:#8CB0BF;background:#DCEAF0">Contact {{ detail.name }}</button>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ officeList }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;flex-direction:column;gap:16px">
+              <div style="display:flex;flex-direction:column;gap:4px">
+                <h1 style="font-size:clamp(22px,3vw,28px);font-weight:700;letter-spacing:-0.02em">Campus clearances</h1>
+                <p style="font-size:16px;color:#5D6870;text-wrap:pretty">Five of seven offices have approved your Fall 2026 registration. One office needs your response.</p>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px">
+                <sc-for list="{{ offices }}" as="o" hint-placeholder-count="7">
+                  <div style="background:#FFFFFF;border:1px solid {{ o.cardBorder }};border-radius:13px;padding:15px;display:flex;flex-direction:column;gap:10px">
+                    <div style="display:flex;align-items:center;gap:10px;justify-content:space-between">
+                      <span style="font-size:16px;font-weight:700">{{ o.name }}</span>
+                      <span aria-hidden="true" style="flex:none;width:26px;height:26px;border-radius:50%;background:{{ o.iconBg }};border:1px solid {{ o.iconBorder }};color:{{ o.iconFg }};font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center">{{ o.icon }}</span>
+                    </div>
+                    <span style="align-self:flex-start;font-size:13.5px;font-weight:700;color:{{ o.chipFg }};background:{{ o.chipBg }};border:1px solid {{ o.chipBorder }};border-radius:20px;padding:3px 11px">{{ o.statusLabel }}</span>
+                    <span style="font-size:14px;color:#5D6870">{{ o.updated }}</span>
+                    <button type="button" onClick="{{ o.onView }}" style="align-self:flex-start;padding:9px 15px;border:1px solid #D3DEE2;background:#FFFFFF;border-radius:9px;font-size:14px;font-weight:700;min-height:42px" style-hover="border-color:#8CB0BF;background:#DCEAF0">View details</button>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ showDocuments }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <h1 style="font-size:clamp(22px,3vw,28px);font-weight:700;letter-spacing:-0.02em">Documents</h1>
+            <p style="font-size:16px;color:#5D6870">Everything you have uploaded, and anything still outstanding.</p>
+          </div>
+
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <span style="font-size:13.5px;font-weight:700;color:#5D6870">Semester</span>
+            <sc-for list="{{ docFilters }}" as="df" hint-placeholder-count="3">
+              <button type="button" aria-pressed="{{ df.selected }}" onClick="{{ df.onSelect }}" style="padding:8px 14px;border:1px solid {{ df.border }};border-radius:20px;background:{{ df.bg }};font-size:14px;font-weight:700;color:#15191C;min-height:40px" style-hover="border-color:#8CB0BF">{{ df.label }}</button>
+            </sc-for>
+          </div>
+
+          <sc-if value="{{ hasDocs }}" hint-placeholder-val="{{ true }}">
+            <ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px">
+              <sc-for list="{{ docList }}" as="d" hint-placeholder-count="4">
+                <li style="background:#FFFFFF;border:1px solid #D3DEE2;border-radius:12px;padding:14px;display:flex;gap:13px;align-items:flex-start;flex-wrap:wrap">
+                  <span aria-hidden="true" style="flex:none;width:38px;height:44px;border:1px solid #C9DAE2;border-radius:6px;background:#DCEAF0;color:#2F5A6B;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center">{{ d.ext }}</span>
+                  <div style="flex:1 1 260px;min-width:210px;display:flex;flex-direction:column;gap:2px">
+                    <span style="font-size:15.5px;font-weight:700">{{ d.name }}</span>
+                    <span style="font-size:14px;color:#5D6870">{{ d.meta }}</span>
+                  </div>
+                  <span style="font-size:13px;font-weight:700;color:{{ d.chipFg }};background:{{ d.chipBg }};border:1px solid {{ d.chipBorder }};border-radius:20px;padding:3px 11px;flex:none">{{ d.status }}</span>
+                  <div style="display:flex;gap:8px;flex:none">
+                    <button type="button" onClick="{{ d.onView }}" style="padding:9px 14px;border:1px solid #D3DEE2;background:#FFFFFF;border-radius:9px;font-size:14px;font-weight:700;min-height:42px" style-hover="border-color:#8CB0BF;background:#DCEAF0">View</button>
+                    <button type="button" onClick="{{ d.onReplace }}" style="padding:9px 14px;border:1px solid #D3DEE2;background:#FFFFFF;border-radius:9px;font-size:14px;font-weight:700;min-height:42px" style-hover="border-color:#8CB0BF;background:#DCEAF0">{{ d.action }}</button>
+                  </div>
+                </li>
+              </sc-for>
+            </ul>
+          </sc-if>
+
+          <sc-if value="{{ noDocs }}" hint-placeholder-val="{{ false }}">
+            <div style="border:1px dashed #BFCED4;border-radius:13px;background:#FFFFFF;padding:38px 20px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px">
+              <span aria-hidden="true" style="width:40px;height:48px;border:1px solid #C9DAE2;border-radius:6px;background:#DCEAF0"></span>
+              <h2 style="font-size:17px;font-weight:700">No documents for this semester</h2>
+              <p style="font-size:15px;color:#5D6870;max-width:46ch;text-wrap:pretty">Documents you upload during registration will be listed here with their review status.</p>
+              <button type="button" onClick="{{ goRegistration }}" style="margin-top:4px;padding:10px 18px;border:1px solid #7BA2B3;background:#8CB0BF;color:#0B1216;border-radius:10px;font-size:15px;font-weight:700;min-height:44px" style-hover="background:#9DBDC9">Go to documents step</button>
+            </div>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ showActivity }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <h1 style="font-size:clamp(22px,3vw,28px);font-weight:700;letter-spacing:-0.02em">Activity</h1>
+            <p style="font-size:16px;color:#5D6870">A record of every update to your registration.</p>
+          </div>
+          <ul style="list-style:none;margin:0;padding:0;background:#FFFFFF;border:1px solid #D3DEE2;border-radius:13px">
+            <sc-for list="{{ activity }}" as="a" hint-placeholder-count="6">
+              <li style="display:flex;gap:13px;align-items:flex-start;padding:14px 16px;border-bottom:1px solid #DEE9ED;flex-wrap:wrap">
+                <span aria-hidden="true" style="flex:none;width:26px;height:26px;border-radius:50%;background:{{ a.iconBg }};border:1px solid {{ a.iconBorder }};color:{{ a.iconFg }};font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center">{{ a.icon }}</span>
+                <div style="flex:1 1 280px;min-width:220px;display:flex;flex-direction:column;gap:1px">
+                  <span style="font-size:15.5px;font-weight:700">{{ a.title }}</span>
+                  <span style="font-size:14.5px;color:#5D6870;text-wrap:pretty">{{ a.body }}</span>
+                </div>
+                <span style="font-size:13.5px;color:#5D6870;flex:none">{{ a.when }}</span>
+              </li>
+            </sc-for>
+          </ul>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ showHelp }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <h1 style="font-size:clamp(22px,3vw,28px);font-weight:700;letter-spacing:-0.02em">Help</h1>
+            <p style="font-size:16px;color:#5D6870;text-wrap:pretty">Reach the office that handles your question, or read the answers students ask about most.</p>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px">
+            <sc-for list="{{ contacts }}" as="c" hint-placeholder-count="3">
+              <div style="background:#FFFFFF;border:1px solid #D3DEE2;border-radius:13px;padding:16px;display:flex;flex-direction:column;gap:4px">
+                <span style="font-size:16px;font-weight:700">{{ c.office }}</span>
+                <span style="font-size:14.5px;color:#5D6870;text-wrap:pretty">{{ c.role }}</span>
+                <span style="font-size:14.5px;font-weight:600;margin-top:4px">{{ c.phone }}</span>
+                <a href="#contact" style="font-size:14.5px;font-weight:700">{{ c.email }}</a>
+                <span style="font-size:13.5px;color:#5D6870">{{ c.hours }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="background:#DCEAF0;border:1px solid #C9DAE2;border-radius:13px;padding:16px;display:flex;flex-direction:column;gap:10px">
+            <h2 style="font-size:17px;font-weight:700">Common questions</h2>
+            <sc-for list="{{ faqs }}" as="q" hint-placeholder-count="4">
+              <div style="background:#FFFFFF;border:1px solid #D3DEE2;border-radius:11px;padding:13px 14px;display:flex;flex-direction:column;gap:3px">
+                <span style="font-size:15.5px;font-weight:700">{{ q.q }}</span>
+                <span style="font-size:14.5px;color:#5D6870;text-wrap:pretty">{{ q.a }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <footer style="margin-top:auto;padding-top:20px;border-top:1px solid #D3DEE2;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap">
+        <span style="font-size:13.5px;color:#5D6870">Livingstone College &middot; Office of the Registrar</span>
+        <div style="display:flex;gap:16px;flex-wrap:wrap">
+          <a href="#privacy" style="font-size:13.5px;color:#5D6870">Privacy</a>
+          <a href="#accessibility" style="font-size:13.5px;color:#5D6870">Accessibility</a>
+          <a href="#support" style="font-size:13.5px;color:#5D6870">Support</a>
+        </div>
+      </footer>
+    </main>
+  </div>
+
+  <nav aria-label="Student sections" style="display:{{ bottomNavDisplay }};position:sticky;bottom:0;z-index:35;background:#FFFFFF;border-top:1px solid #D3DEE2;padding:6px 6px 8px;gap:2px;justify-content:space-between">
+    <sc-for list="{{ navItems }}" as="item" hint-placeholder-count="6">
+      <button type="button" onClick="{{ item.onClick }}" aria-current="{{ item.current }}" style="flex:1 1 0;min-width:0;min-height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;border:0;background:transparent;padding:4px 2px;font-size:11.5px;font-weight:{{ item.weight }};color:{{ item.mobileFg }}">
+        <span aria-hidden="true" style="width:20px;height:4px;border-radius:3px;background:{{ item.dot }}"></span>
+        {{ item.label }}
+      </button>
+    </sc-for>
+  </nav>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;screen&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;overview&quot;,&quot;registration&quot;,&quot;clearances&quot;,&quot;documents&quot;,&quot;activity&quot;,&quot;help&quot;],&quot;default&quot;:&quot;overview&quot;,&quot;tsType&quot;:&quot;'overview'|'registration'|'clearances'|'documents'|'activity'|'help'&quot;,&quot;section&quot;:&quot;Screen&quot;},&quot;formStep&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:1,&quot;min&quot;:1,&quot;max&quot;:6,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Screen&quot;},&quot;state&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;default&quot;,&quot;loading&quot;,&quot;error&quot;,&quot;empty&quot;],&quot;default&quot;:&quot;default&quot;,&quot;tsType&quot;:&quot;'default'|'loading'|'error'|'empty'&quot;,&quot;section&quot;:&quot;Interface state&quot;},&quot;viewport&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;auto&quot;,&quot;desktop&quot;,&quot;tablet&quot;,&quot;mobile&quot;],&quot;default&quot;:&quot;auto&quot;,&quot;tsType&quot;:&quot;'auto'|'desktop'|'tablet'|'mobile'&quot;,&quot;section&quot;:&quot;Preview&quot;}}">
+const CHIP = {
+  approved: { label: "Approved", icon: "\u2713", fg: "#1E4A36", bg: "#E8F3EC", border: "#BFDCCB", iconBg: "#2F6B4F", iconFg: "#FFFFFF", iconBorder: "#2F6B4F", cardBorder: "#D3DEE2" },
+  action: { label: "Action Required", icon: "!", fg: "#7A4E0E", bg: "#FDF3E3", border: "#EBD3A8", iconBg: "#8A5A12", iconFg: "#FFFFFF", iconBorder: "#8A5A12", cardBorder: "#EBD3A8" },
+  pending: { label: "Pending", icon: "\u00B7\u00B7", fg: "#3E5460", bg: "#DEE9ED", border: "#D3DDE2", iconBg: "#FFFFFF", iconFg: "#4E6672", iconBorder: "#BFCED4", cardBorder: "#D3DEE2" },
+  rejected: { label: "Rejected", icon: "\u00D7", fg: "#8E2A25", bg: "#FBF0EF", border: "#E7BDBA", iconBg: "#B4342E", iconFg: "#FFFFFF", iconBorder: "#B4342E", cardBorder: "#E7BDBA" }
+};
+
+const OFFICES = [
+  { name: "Registrar", status: "approved", updated: "Approved August 24, 2026", message: "Your enrollment record and course eligibility have been verified for Fall 2026.", meta: [["Reviewed by", "K. Bethea, Registrar"], ["Decision date", "August 24, 2026"], ["Reference", "REG-26-0841"], ["Action needed", "None"]], reqs: [["Enrollment record verified", "Confirmed against academic history.", "approved"], ["Course eligibility", "No holds on registration.", "approved"]] },
+  { name: "Health Services", status: "approved", updated: "Approved August 26, 2026", message: "Immunization record received and complete. No further documentation is required this semester.", meta: [["Reviewed by", "Health Services staff"], ["Decision date", "August 26, 2026"], ["Reference", "HLT-26-2210"], ["Action needed", "None"]], reqs: [["Immunization record", "Uploaded July 30, 2026.", "approved"], ["TB screening", "On file, valid through 2027.", "approved"]] },
+  { name: "Success Center", status: "approved", updated: "Approved August 28, 2026", message: "Advising session completed. Your advisor has released your registration hold.", meta: [["Reviewed by", "T. Odom, Advisor"], ["Decision date", "August 28, 2026"], ["Reference", "SUC-26-0330"], ["Action needed", "None"]], reqs: [["Advising session", "Held August 27, 2026.", "approved"], ["Course plan acknowledged", "Signed electronically.", "approved"]] },
+  { name: "Financial Aid", status: "action", updated: "Needs your response since September 2, 2026", message: "Your FAFSA record was selected for verification. Upload the signed verification worksheet, or contact the office if your household information has changed.", meta: [["Requested by", "Financial Aid Office"], ["Requested on", "September 2, 2026"], ["Respond before", "September 11, 2026"], ["Reference", "FIN-26-1174"]], reqs: [["Verification worksheet", "Signed PDF not yet received.", "action"], ["FAFSA on file", "Received May 12, 2026.", "approved"], ["Award acceptance", "Waiting on verification.", "pending"]] },
+  { name: "Business Office", status: "approved", updated: "Approved August 30, 2026", message: "Your account balance and payment plan meet the requirements for registration.", meta: [["Reviewed by", "Student Accounts"], ["Decision date", "August 30, 2026"], ["Balance", "$0.00 past due"], ["Action needed", "None"]], reqs: [["Past-due balance cleared", "No outstanding charges.", "approved"], ["Payment plan active", "Fall 2026 plan in good standing.", "approved"]] },
+  { name: "Residence Life", status: "approved", updated: "Approved September 1, 2026", message: "Housing assignment confirmed. Move-in details were emailed to your college address.", meta: [["Reviewed by", "Residence Life"], ["Decision date", "September 1, 2026"], ["Assignment", "Aggrey Hall, Room 214"], ["Action needed", "None"]], reqs: [["Housing agreement", "Signed August 19, 2026.", "approved"], ["Room assignment", "Aggrey Hall 214.", "approved"]] },
+  { name: "Public Safety", status: "pending", updated: "In review since September 3, 2026", message: "Your parking and campus ID request is in the review queue. No action is needed from you right now.", meta: [["Reviewed by", "Public Safety"], ["Received on", "September 3, 2026"], ["Typical response", "3\u20135 business days"], ["Action needed", "None yet"]], reqs: [["Campus ID photo", "Received September 3, 2026.", "approved"], ["Parking registration", "Awaiting review.", "pending"]] }
+];
+
+const STEP_DEFS = [
+  { title: "Personal Information", help: "Confirm the details the college has on record.", fields: [
+    { id: "firstName", label: "Legal first name", req: true },
+    { id: "lastName", label: "Legal last name", req: true },
+    { id: "preferred", label: "Preferred name", placeholder: "Optional" },
+    { id: "dob", label: "Date of birth", req: true, placeholder: "MM/DD/YYYY" },
+    { id: "studentId", label: "Student ID", readOnly: true, help: "Managed by the Registrar." }
+  ] },
+  { title: "Academic Information", help: "Tell us how you are enrolling this semester.", fields: [
+    { id: "classification", label: "Classification", req: true, options: ["Freshman", "Sophomore", "Junior", "Senior"] },
+    { id: "major", label: "Major", req: true, options: ["Business Administration", "Biology", "Computer Information Systems", "Education", "Sport Management"] },
+    { id: "credits", label: "Planned credit hours", req: true, placeholder: "e.g. 15" },
+    { id: "gradTerm", label: "Expected graduation", req: true, options: ["Spring 2028", "Fall 2028", "Spring 2029"] },
+    { id: "advisor", label: "Academic advisor", readOnly: true }
+  ] },
+  { title: "Contact and Emergency Information", help: "We use this to reach you about registration only.", fields: [
+    { id: "email", label: "College email", readOnly: true },
+    { id: "phone", label: "Mobile phone", req: true, placeholder: "(704) 000-0000" },
+    { id: "address", label: "Mailing address", req: true },
+    { id: "ecName", label: "Emergency contact name", req: true },
+    { id: "ecPhone", label: "Emergency contact phone", req: true, placeholder: "(704) 000-0000" },
+    { id: "ecRelation", label: "Relationship", options: ["Parent", "Guardian", "Sibling", "Spouse", "Other"] }
+  ] },
+  { title: "Housing Information", help: "Residential students only; commuters can continue.", fields: [
+    { id: "housing", label: "Housing preference", req: true, options: ["On-campus residence hall", "Commuter \u2014 living off campus"] },
+    { id: "hall", label: "Preferred residence hall", options: ["Aggrey Hall", "Dunbar Hall", "Hood Hall", "No preference"] },
+    { id: "mealPlan", label: "Meal plan", req: true, options: ["Full \u2014 19 meals", "Standard \u2014 14 meals", "Commuter \u2014 5 meals"] },
+    { id: "roommate", label: "Roommate request", placeholder: "Name and student ID (optional)" },
+    { id: "access", label: "Accessibility needs", placeholder: "Optional" }
+  ] },
+  { title: "Documents", help: "Upload the files each office requires." },
+  { title: "Review and Submit", help: "Check your answers before submitting to the Registrar." }
+];
+
+const DOCS = {
+  "Fall 2026": [
+    { name: "Immunization record", ext: "PDF", meta: "Uploaded July 30, 2026 \u00b7 1.2 MB \u00b7 Health Services", status: "approved", action: "Replace" },
+    { name: "Photo ID", ext: "JPG", meta: "Uploaded September 3, 2026 \u00b7 640 KB \u00b7 Public Safety", status: "pending", action: "Replace" },
+    { name: "Financial aid verification worksheet", ext: "PDF", meta: "Not received \u00b7 Required by September 11, 2026", status: "action", action: "Upload" },
+    { name: "Housing agreement", ext: "PDF", meta: "Signed August 19, 2026 \u00b7 310 KB \u00b7 Residence Life", status: "approved", action: "View copy" }
+  ],
+  "Spring 2026": [
+    { name: "Immunization record", ext: "PDF", meta: "Uploaded January 6, 2026 \u00b7 1.1 MB \u00b7 Health Services", status: "approved", action: "View copy" },
+    { name: "Photo ID", ext: "JPG", meta: "Uploaded January 8, 2026 \u00b7 590 KB \u00b7 Public Safety", status: "approved", action: "View copy" },
+    { name: "Payment plan agreement", ext: "PDF", meta: "Signed January 9, 2026 \u00b7 220 KB \u00b7 Business Office", status: "approved", action: "View copy" }
+  ],
+  "Spring 2025": []
+};
+
+const RECORDS = {
+  "Fall 2026": { term: "Fall 2026", appId: "REG-2026-004182", submitted: "September 1, 2026 (in progress)", status: "action",
+    statusLabel: "In Progress \u2014 Action Required",
+    info: [["Classification", "Junior"], ["Major", "Computer Information Systems"], ["Credit hours", "15"], ["Housing", "Aggrey Hall, Room 214"], ["Meal plan", "Standard \u2014 14 meals"], ["Advisor", "T. Odom"]] },
+  "Spring 2026": { term: "Spring 2026", appId: "REG-2026-001077", submitted: "January 9, 2026", status: "approved", statusLabel: "Completed \u2014 Registered",
+    info: [["Classification", "Sophomore"], ["Major", "Computer Information Systems"], ["Credit hours", "16"], ["Housing", "Dunbar Hall, Room 118"], ["Meal plan", "Full \u2014 19 meals"], ["Advisor", "T. Odom"]] },
+  "Spring 2025": { term: "Spring 2025", appId: "REG-2025-000914", submitted: "January 10, 2025", status: "approved", statusLabel: "Completed \u2014 Registered",
+    info: [["Classification", "Freshman"], ["Major", "Business Administration"], ["Credit hours", "15"], ["Housing", "Commuter"], ["Meal plan", "Commuter \u2014 5 meals"], ["Advisor", "M. Reid"]] }
+};
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      screen: props.screen || "overview",
+      step: Math.min(Math.max(parseInt(props.formStep || 1, 10) || 1, 1), 6),
+      semester: "Fall 2026",
+      docSemester: "Fall 2026",
+      office: null,
+      menuOpen: false,
+      dirty: false,
+      touched: false,
+      certified: false,
+      toast: null,
+      narrow: false,
+      form: {
+        firstName: "Francis", lastName: "Amoah", preferred: "", dob: "04/18/2005", studentId: "20261184",
+        classification: "Junior", major: "Computer Information Systems", credits: "15", gradTerm: "Spring 2028", advisor: "T. Odom",
+        email: "famoah@livingstone.edu", phone: "(704) 216-6000", address: "701 W. Monroe Street, Salisbury, NC 28144",
+        ecName: "Grace Amoah", ecPhone: "", ecRelation: "Parent",
+        housing: "On-campus residence hall", hall: "Aggrey Hall", mealPlan: "Standard \u2014 14 meals", roommate: "", access: ""
+      }
+    };
+    this._measure = () => {
+      const narrow = (this.props.viewport === "mobile") || window.innerWidth < 760;
+      if (narrow !== this.state.narrow) this.setState({ narrow: narrow });
+    };
+    this._onResize = () => this._measure();
+  }
+
+  componentDidMount() {
+    window.addEventListener("resize", this._onResize);
+    this._measure();
+  }
+  componentWillUnmount() {
+    window.removeEventListener("resize", this._onResize);
+    clearTimeout(this._t);
+  }
+  componentDidUpdate(prev) {
+    if (prev.viewport !== this.props.viewport) this._onResize && this._onResize();
+    if (prev.screen !== this.props.screen && this.props.screen) {
+      this.setState({ screen: this.props.screen, office: null });
+    }
+  }
+
+  flash(title, body) {
+    this.setState({ toast: { title: title, body: body } });
+    clearTimeout(this._t);
+    this._t = setTimeout(() => this.setState({ toast: null }), 4200);
+  }
+
+  go(screen) { this.setState({ screen: screen, office: null, menuOpen: false, touched: false }); }
+  set(id, v) { this.setState(s => ({ form: Object.assign({}, s.form, { [id]: v }), dirty: true })); }
+
+  missing(step) {
+    const defs = STEP_DEFS[step - 1];
+    if (!defs || !defs.fields) return [];
+    return defs.fields.filter(f => f.req && !String(this.state.form[f.id] || "").trim());
+  }
+
+  renderVals() {
+    const st = this.state;
+    const state = this.props.state || "default";
+    const isLoading = state === "loading";
+    const isError = state === "error";
+    const empty = state === "empty";
+    const narrow = st.narrow || this.props.viewport === "mobile";
+    const widths = { auto: "100%", desktop: "1440px", tablet: "834px", mobile: "414px" };
+    const chip = k => CHIP[k] || CHIP.pending;
+
+    const contentVisible = !isLoading && !isError;
+    const offices = OFFICES.map((o, i) => {
+      const c = chip(o.status);
+      return {
+        name: o.name, updated: o.updated, statusLabel: c.label, icon: c.icon,
+        chipFg: c.fg, chipBg: c.bg, chipBorder: c.border, cardBorder: c.cardBorder,
+        iconBg: c.iconBg, iconFg: c.iconFg, iconBorder: c.iconBorder,
+        onView: () => this.setState({ screen: "clearances", office: i })
+      };
+    });
+
+    const nav = [
+      ["Overview", "overview", false], ["Registration", "registration", false],
+      ["Clearances", "clearances", true], ["Documents", "documents", false],
+      ["Activity", "activity", false], ["Help", "help", false]
+    ];
+    const navItems = nav.map(n => {
+      const active = st.screen === n[1];
+      return {
+        label: n[0], current: active ? "page" : false, badge: n[2],
+        bg: active ? "#DCEAF0" : "#FFFFFF", fg: active ? "#15191C" : "#3A464D",
+        mobileFg: active ? "#15191C" : "#5D6870",
+        border: active ? "#C9DAE2" : "transparent",
+        weight: active ? 700 : 600,
+        dot: active ? "#8CB0BF" : "#BFCED4",
+        onClick: () => this.go(n[1])
+      };
+    });
+
+    const stages = [
+      { tag: "Completed", title: "Student Information", note: "Submitted September 1, 2026.", key: "approved" },
+      { tag: "Current stage", title: "Campus Clearances", note: "5 of 7 offices approved \u00b7 Financial Aid needs you.", key: "action" },
+      { tag: "Upcoming", title: "Final Review", note: "Registrar confirms once all clearances close.", key: "pending" }
+    ].map(s => {
+      const c = chip(s.key);
+      return { tag: s.tag, title: s.title, note: s.note, icon: s.key === "approved" ? "\u2713" : (s.key === "action" ? "2" : "3"),
+        bg: s.key === "pending" ? "#F4F8F9" : c.bg, border: c.border, labelFg: c.fg,
+        iconBg: c.iconBg, iconFg: c.iconFg, iconBorder: c.iconBorder };
+    });
+
+    const rec = RECORDS[st.semester];
+    const rc = chip(rec.status);
+    const semesters = ["Fall 2026", "Spring 2026", "Spring 2025"].map(t => ({
+      term: t, tag: t === "Fall 2026" ? "Current \u00b7 In Progress" : "Completed",
+      tagFg: t === "Fall 2026" ? "#7A4E0E" : "#1E4A36",
+      selected: st.semester === t, bg: st.semester === t ? "#DCEAF0" : "#FFFFFF",
+      border: st.semester === t ? "#8CB0BF" : "#D3DEE2",
+      onSelect: () => this.setState({ semester: t })
+    }));
+    const recDocs = (DOCS[st.semester] || []).slice(0, 3).map(d => {
+      const c = chip(d.status);
+      return { name: d.name, meta: d.meta, status: c.label, chipFg: c.fg, chipBg: c.bg, chipBorder: c.border };
+    });
+    const recClear = OFFICES.map(o => {
+      const key = st.semester === "Fall 2026" ? o.status : "approved";
+      const c = chip(key);
+      return { name: o.name, status: c.label, icon: c.icon, chipFg: c.fg };
+    });
+
+    const step = st.step;
+    const defs = STEP_DEFS[step - 1];
+    const miss = this.missing(step);
+    const fields = (defs.fields || []).map(f => {
+      const invalid = st.touched && f.req && !String(st.form[f.id] || "").trim();
+      return {
+        id: "lc-" + f.id, label: f.label, req: f.req ? " *" : "",
+        value: st.form[f.id] || "", placeholder: f.placeholder || "",
+        isSelect: !!f.options, isText: !f.options, options: f.options || [],
+        readOnly: !!f.readOnly, inputBg: f.readOnly ? "#E8F0F3" : "#FFFFFF",
+        border: invalid ? "#B4342E" : "#D3DEE2",
+        invalid: invalid || false, hasError: invalid || false,
+        error: invalid ? f.label + " is required." : "",
+        hasHelp: !!f.help && !invalid, help: f.help || "",
+        onChange: e => this.set(f.id, e.target.value)
+      };
+    });
+
+    const formSteps = STEP_DEFS.map((d, i) => {
+      const key = i + 1 < step ? "approved" : (i + 1 === step ? "action" : "pending");
+      const c = chip(key);
+      return { title: d.title, tag: i + 1 < step ? "Completed" : (i + 1 === step ? "Current" : "Upcoming"),
+        icon: i + 1 < step ? "\u2713" : String(i + 1), tagFg: c.fg,
+        bg: key === "pending" ? "#F4F8F9" : c.bg, border: c.border,
+        iconBg: c.iconBg, iconFg: c.iconFg, iconBorder: c.iconBorder };
+    });
+
+    const uploads = [
+      { name: "Immunization record", status: "approved", meta: "Uploaded July 30, 2026 \u00b7 PDF \u00b7 1.2 MB \u00b7 Verified by Health Services", action: "Replace", req: false },
+      { name: "Photo ID", status: "pending", meta: "Uploaded September 3, 2026 \u00b7 JPG \u00b7 640 KB \u00b7 Pending review by Public Safety", action: "Replace", req: false },
+      { name: "Financial aid verification worksheet", status: "action", meta: "Required by Financial Aid. Signed PDF, no larger than 10 MB.", action: "Upload file", req: true }
+    ].map(u => {
+      const c = chip(u.status);
+      return Object.assign({}, u, { req: u.req ? " *" : "", status: c.label, icon: c.icon,
+        chipFg: c.fg, chipBg: c.bg, chipBorder: c.border, bg: u.status === "action" ? "#FDF3E3" : "#F4F8F9",
+        border: u.status === "action" ? "#EBD3A8" : "#D3DEE2",
+        iconBg: c.iconBg, iconFg: c.iconFg, iconBorder: c.iconBorder,
+        onAction: () => this.flash("Upload started", u.name + " will appear here once the file finishes uploading.") });
+    });
+
+    const f = st.form;
+    const reviewGroups = [
+      { title: "Personal Information", to: 1, rows: [["Legal name", f.firstName + " " + f.lastName], ["Date of birth", f.dob], ["Student ID", f.studentId]] },
+      { title: "Academic Information", to: 2, rows: [["Classification", f.classification], ["Major", f.major], ["Credit hours", f.credits], ["Expected graduation", f.gradTerm]] },
+      { title: "Contact and Emergency", to: 3, rows: [["College email", f.email], ["Mobile phone", f.phone], ["Emergency contact", (f.ecName || "\u2014") + (f.ecPhone ? " \u00b7 " + f.ecPhone : " \u00b7 phone missing")]] },
+      { title: "Housing", to: 4, rows: [["Preference", f.housing], ["Hall", f.hall], ["Meal plan", f.mealPlan]] }
+    ].map(g => ({ title: g.title, rows: g.rows.map(r => ({ label: r[0], value: r[1] })), onEdit: () => this.setState({ step: g.to, touched: false }) }));
+
+    const od = st.office === null || st.office === undefined ? null : OFFICES[st.office];
+    const detail = od ? (() => {
+      const c = chip(od.status);
+      return {
+        name: od.name, updated: od.updated, statusLabel: c.label, icon: c.icon,
+        chipFg: c.fg, chipBg: c.bg, chipBorder: c.border,
+        noteBg: od.status === "action" ? "#FDF3E3" : "#F4F8F9",
+        noteBorder: od.status === "action" ? "#EBD3A8" : "#D3DEE2",
+        message: od.message,
+        meta: od.meta.map(m => ({ label: m[0], value: m[1] })),
+        requirements: od.reqs.map(r => {
+          const rc2 = chip(r[2]);
+          return { name: r[0], note: r[1], status: rc2.label, icon: rc2.icon, chipFg: rc2.fg, chipBg: rc2.bg, chipBorder: rc2.border,
+            iconBg: rc2.iconBg, iconFg: rc2.iconFg, iconBorder: rc2.iconBorder };
+        }),
+        primary: od.status === "action" ? "Upload requested document" : "Back to registration"
+      };
+    })() : null;
+
+    const docs = (empty ? [] : (DOCS[st.docSemester] || [])).map(d => {
+      const c = chip(d.status);
+      return { name: d.name, ext: d.ext, meta: d.meta, status: c.label, action: d.action,
+        chipFg: c.fg, chipBg: c.bg, chipBorder: c.border,
+        onView: () => this.flash("Opening document", d.name + " opens in a new tab."),
+        onReplace: () => this.flash("Upload started", d.name + " will update once the file finishes uploading.") };
+    });
+
+    const activity = [
+      { key: "action", title: "Financial Aid requested more information", body: "Verification worksheet required before final review.", when: "Sept 2" },
+      { key: "pending", title: "Public Safety received your request", body: "Campus ID and parking registration are in review.", when: "Sept 3" },
+      { key: "approved", title: "Residence Life approved your clearance", body: "Aggrey Hall, Room 214 confirmed.", when: "Sept 1" },
+      { key: "approved", title: "Business Office approved your clearance", body: "No past-due balance on your account.", when: "Aug 30" },
+      { key: "approved", title: "Success Center approved your clearance", body: "Advising session completed with T. Odom.", when: "Aug 28" },
+      { key: "approved", title: "Student information submitted", body: "Registration application REG-2026-004182 created.", when: "Aug 24" }
+    ].map(a => {
+      const c = chip(a.key);
+      return { title: a.title, body: a.body, when: a.when, icon: c.icon, iconBg: c.iconBg, iconFg: c.iconFg, iconBorder: c.iconBorder };
+    });
+
+    return {
+      frameWidth: widths[this.props.viewport || "auto"] || "100%",
+      sidebarDisplay: narrow ? "none" : "flex",
+      bottomNavDisplay: narrow ? "flex" : "none",
+      navItems: navItems,
+      menuOpen: st.menuOpen,
+      toggleMenu: () => this.setState(s => ({ menuOpen: !s.menuOpen })),
+      openNotifications: () => this.flash("2 new notifications", "Financial Aid requested a document. Public Safety received your ID request."),
+      showToast: !!st.toast, toastTitle: st.toast ? st.toast.title : "", toastBody: st.toast ? st.toast.body : "",
+      isLoading: isLoading, showError: isError,
+      retry: () => this.flash("Reloading", "Requesting your clearance status again."),
+
+      showOverview: contentVisible && st.screen === "overview",
+      showRegistration: contentVisible && st.screen === "registration",
+      showClearances: contentVisible && st.screen === "clearances",
+      showDocuments: contentVisible && st.screen === "documents",
+      showActivity: contentVisible && st.screen === "activity",
+      showHelp: contentVisible && st.screen === "help",
+
+      goOverview: () => this.go("overview"),
+      goRegistration: () => this.go("registration"),
+      goClearances: () => this.go("clearances"),
+      goHelp: () => this.go("help"),
+      viewFinancialAid: () => this.setState({ screen: "clearances", office: 3 }),
+
+      stages: stages, offices: offices,
+      hasRecords: !empty, noRecords: empty,
+      semesters: semesters,
+      record: { term: rec.term, appId: rec.appId, submitted: rec.submitted, statusLabel: rec.statusLabel,
+        chipFg: rc.fg, chipBg: rc.bg, chipBorder: rc.border,
+        info: rec.info.map(i => ({ label: i[0], value: i[1] })), docs: recDocs, clearances: recClear },
+      viewSubmission: () => this.flash("Opening submission", rec.term + " submission " + rec.appId + " opens in a printable view."),
+
+      stepNumber: step, stepTitle: defs.title, stepHelp: defs.help,
+      formSteps: formSteps, fields: fields,
+      showFields: step <= 4, showDocsStep: step === 5, showReviewStep: step === 6,
+      uploads: uploads, reviewGroups: reviewGroups,
+      certified: st.certified, toggleCertify: e => this.setState({ certified: e.target.checked }),
+      dirty: st.dirty, atFirstStep: step === 1, backFg: step === 1 ? "#8A959B" : "#15191C",
+      showValidation: st.touched && miss.length > 0,
+      validationSummary: miss.length ? "Complete " + miss.length + " required field" + (miss.length > 1 ? "s" : "") + " before continuing: " + miss.map(m => m.label).join(", ") + "." : "",
+      primaryLabel: step === 6 ? "Submit registration" : "Save and Continue",
+      prevStep: () => { if (step > 1) this.setState({ step: step - 1, touched: false }); },
+      saveDraft: () => { this.setState({ dirty: false }); this.flash("Draft saved", "Your progress was saved. You can return to this step later."); },
+      onFormSubmit: e => {
+        e.preventDefault();
+        const m = this.missing(step);
+        if (m.length) { this.setState({ touched: true }); return; }
+        if (step === 6) { this.flash("Registration submitted", "Application REG-2026-004182 is now with the Registrar for final review."); return; }
+        this.setState({ step: step + 1, touched: false, dirty: false });
+        this.flash("Step saved", defs.title + " saved successfully.");
+      },
+
+      officeDetail: !!detail, officeList: !detail, detail: detail || {},
+      closeOffice: () => this.setState({ office: null }),
+
+      docFilters: ["Fall 2026", "Spring 2026", "Spring 2025"].map(t => ({
+        label: t, selected: st.docSemester === t,
+        bg: st.docSemester === t ? "#DCEAF0" : "#FFFFFF",
+        border: st.docSemester === t ? "#8CB0BF" : "#D3DEE2",
+        onSelect: () => this.setState({ docSemester: t })
+      })),
+      docList: docs, hasDocs: docs.length > 0, noDocs: docs.length === 0,
+
+      activity: activity,
+      contacts: [
+        { office: "Office of the Registrar", role: "Registration, records, and final review.", phone: "704-216-6001", email: "registrar@livingstone.edu", hours: "Mon\u2013Fri, 8:30 a.m.\u20135 p.m." },
+        { office: "Financial Aid", role: "Verification, awards, and aid questions.", phone: "704-216-6100", email: "financialaid@livingstone.edu", hours: "Mon\u2013Fri, 9 a.m.\u20134:30 p.m." },
+        { office: "Technical Support", role: "Sign-in problems and portal errors.", phone: "704-216-6200", email: "support@livingstone.edu", hours: "Mon\u2013Fri, 8 a.m.\u20136 p.m." }
+      ],
+      faqs: [
+        { q: "What does Action Required mean?", a: "An office needs something from you before it can approve your clearance. Open the clearance to see exactly what to send." },
+        { q: "Can I save my progress and return later?", a: "Yes. Save Draft keeps every field on the current step, and you can pick up where you left off." },
+        { q: "How will I know when an office approves me?", a: "Your Activity list and your college email are updated each time an office records a decision." },
+        { q: "Who do I contact if a clearance seems wrong?", a: "Contact the office directly from its clearance detail page, or call the Registrar at 704-216-6001." }
+      ]
+    };
+  }
+}
+
+</script>
+</body>
+</html>

@@ -1,19 +1,31 @@
 import { useState, useEffect } from 'react'
+import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
 import Navbar from './components/Navbar'
+import Footer from './components/Footer'
 import Home from './pages/Home'
 import Login from './pages/Login'
-import RegisterStudent from './pages/RegisterStudent'
 import AdminDashboard from './pages/AdminDashboard'
 import StudentPortal from './pages/StudentPortal'
 import { getToken, getCurrentUser, logout } from './services/api'
+import { STUDENT_REGISTRATION_PATH } from './utils/routes'
 import './App.css'
+import './components/siteChrome.css'
 
 /* -------------------------------------------------------
-   AccessRequired — shown when a user tries to open a
-   protected page without the correct session type.
-   Keeps the guard logic simple — just a friendly redirect.
+   AccessRequired — shown in place of a protected page when the
+   visitor can't be there: either not signed in at all ("Login
+   Required", the default), or signed in as the wrong account type
+   ("Unauthorized", via the title/actionLabel/actionPath overrides).
+   Kept as an inline message rather than a hard redirect so the visitor
+   understands why, with one clear way forward.
 ------------------------------------------------------- */
-function AccessRequired({ message, onNavigate }) {
+function AccessRequired({
+  message,
+  onNavigate,
+  title = 'Login Required',
+  actionLabel = 'Go to Login',
+  actionPath = '/login',
+}) {
   return (
     <div className="access-required">
       <div className="access-required__card">
@@ -25,14 +37,14 @@ function AccessRequired({ message, onNavigate }) {
         >
           <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 4l5 2.18V11c0 3.5-2.33 6.79-5 7.93-2.67-1.14-5-4.43-5-7.93V7.18L12 5z" />
         </svg>
-        <h2 className="access-required__title">Login Required</h2>
+        <h2 className="access-required__title">{title}</h2>
         <p className="access-required__message">{message}</p>
         <button
           type="button"
           className="btn btn--primary"
-          onClick={() => onNavigate('login')}
+          onClick={() => onNavigate(actionPath)}
         >
-          Go to Login
+          {actionLabel}
         </button>
       </div>
     </div>
@@ -40,13 +52,53 @@ function AccessRequired({ message, onNavigate }) {
 }
 
 /* -------------------------------------------------------
+   RequireStudentRegistration — the one guard the Registration route
+   goes through, in this order:
+     1. Session still loading            -> caller keeps this off the
+        tree entirely (see renderRoutes) so nothing protected flashes.
+     2. No session                       -> send to /login, remembering
+        this page as `from` so login can return here afterwards.
+     3. Session, but not a student       -> Unauthorized, with a way
+        back to their own dashboard — never a peek at the student form.
+     4. Student session                  -> render the real page.
+------------------------------------------------------- */
+function RequireStudentRegistration({ currentSession, onNavigate, children }) {
+  if (!currentSession) {
+    return <Navigate to="/login" replace state={{ from: STUDENT_REGISTRATION_PATH }} />
+  }
+
+  if (currentSession.account_type !== 'student') {
+    return (
+      <AccessRequired
+        title="Unauthorized"
+        message="Student Registration is only available to student accounts. Head to your own dashboard instead."
+        actionLabel="Go to My Dashboard"
+        actionPath="/admin"
+        onNavigate={onNavigate}
+      />
+    )
+  }
+
+  return children
+}
+
+/* -------------------------------------------------------
    App — root component
 ------------------------------------------------------- */
 function App() {
-  const [currentPage, setCurrentPage]           = useState('home')
+  const navigate = useNavigate()
+  const location = useLocation()
   const [currentSession, setCurrentSession]     = useState(null)
   const [restoringSession, setRestoringSession] = useState(true)
   const [sessionExpired, setSessionExpired]     = useState(false)
+
+  // onNavigate is handed down to every page/nav component as the one
+  // way to move around — it's a thin wrapper over React Router's
+  // useNavigate so a click on Sign In, the logo, etc. changes the real
+  // URL (shareable, back/forward-button aware) instead of just
+  // swapping in-memory state.
+  const onNavigate = navigate
+  const isHome = location.pathname === '/'
 
   // Restore session on load — if a token was saved from a previous
   // visit, ask the backend who it belongs to via GET /auth/me. If the
@@ -69,11 +121,11 @@ function App() {
     const handleSessionExpired = () => {
       setCurrentSession(null)
       setSessionExpired(true)
-      setCurrentPage('login')
+      navigate('/login')
     }
     window.addEventListener('auth:session-expired', handleSessionExpired)
     return () => window.removeEventListener('auth:session-expired', handleSessionExpired)
-  }, [])
+  }, [navigate])
 
   const handleLogin = (user) => {
     setCurrentSession(user)
@@ -82,10 +134,10 @@ function App() {
   const handleLogout = () => {
     logout()
     setCurrentSession(null)
-    setCurrentPage('home')
+    navigate('/')
   }
 
-  const renderPage = () => {
+  const renderRoutes = () => {
     if (restoringSession) {
       return (
         <div className="session-restoring">
@@ -94,63 +146,87 @@ function App() {
       )
     }
 
-    switch (currentPage) {
+    return (
+      <Routes>
+        <Route path="/" element={<Home onNavigate={onNavigate} />} />
 
-      case 'login':
-        return (
-          <Login
-            onNavigate={setCurrentPage}
-            onLogin={handleLogin}
-            sessionExpired={sessionExpired}
-            onDismissSessionExpired={() => setSessionExpired(false)}
-          />
-        )
-
-      case 'register':
-        // The backend is the source of truth here too — only an
-        // authenticated student account may submit an application.
-        if (!currentSession || currentSession.account_type !== 'student') {
-          return (
-            <AccessRequired
-              message="Please log in as a student to start a registration application."
-              onNavigate={setCurrentPage}
+        <Route
+          path="/login"
+          element={
+            <Login
+              onNavigate={onNavigate}
+              onLogin={handleLogin}
+              sessionExpired={sessionExpired}
+              onDismissSessionExpired={() => setSessionExpired(false)}
             />
-          )
-        }
-        return <RegisterStudent onNavigate={setCurrentPage} />
+          }
+        />
 
-      case 'admin':
-        // Backend-authorized access control — account_type comes from
-        // GET /auth/me / the login response, never from a frontend choice.
-        if (!currentSession || !['official', 'admin'].includes(currentSession.account_type)) {
-          return (
-            <AccessRequired
-              message="Please log in as an official or registrar staff member to access the Admin Dashboard."
-              onNavigate={setCurrentPage}
-            />
-          )
-        }
-        return <AdminDashboard onNavigate={setCurrentPage} currentSession={currentSession} />
+        <Route
+          path="/admin"
+          element={
+            // Backend-authorized access control — account_type comes from
+            // GET /auth/me / the login response, never from a frontend choice.
+            !currentSession || !['official', 'admin'].includes(currentSession.account_type) ? (
+              <AccessRequired
+                message="Please log in as an official or registrar staff member to access the Admin Dashboard."
+                onNavigate={onNavigate}
+              />
+            ) : (
+              <AdminDashboard onNavigate={onNavigate} currentSession={currentSession} />
+            )
+          }
+        />
 
-      case 'student-portal':
-        return <StudentPortal onNavigate={setCurrentPage} currentSession={currentSession} />
+        <Route
+          path="/student-portal"
+          element={<StudentPortal onNavigate={onNavigate} currentSession={currentSession} />}
+        />
 
-      default:
-        return <Home onNavigate={setCurrentPage} />
-    }
+        {/* The canonical Registration destination — every landing-page
+            and header Registration/Start Registration button points
+            here. Same StudentPortal shell as above (it opens straight
+            to the Registration tab for this URL); the guard is what's
+            new — it's the only route that enforces "student session or
+            bounce", so this is the one link that always resolves
+            correctly regardless of who clicks it or whether they're
+            signed in yet. */}
+        <Route
+          path={STUDENT_REGISTRATION_PATH}
+          element={
+            <RequireStudentRegistration currentSession={currentSession} onNavigate={onNavigate}>
+              <StudentPortal onNavigate={onNavigate} currentSession={currentSession} />
+            </RequireStudentRegistration>
+          }
+        />
+
+        {/* Anything else falls back to the landing page rather than a
+            dead end. */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    )
   }
 
   return (
     <>
       <Navbar
-        currentPage={currentPage}
-        onNavigate={setCurrentPage}
+        currentPage={isHome ? 'home' : 'other'}
+        onNavigate={onNavigate}
         currentSession={currentSession}
         onLogout={handleLogout}
+        sessionLoading={restoringSession}
       />
       <main className="main-content">
-        {renderPage()}
+        {renderRoutes()}
       </main>
+      {/* The landing page gets the full footer; every other page (login,
+          register, and the signed-in workspaces) gets the same footer
+          in its compact form so dashboards don't grow unnecessarily long. */}
+      <Footer
+        variant={isHome ? 'full' : 'compact'}
+        onNavigate={onNavigate}
+        isAuthenticated={Boolean(currentSession)}
+      />
     </>
   )
 }

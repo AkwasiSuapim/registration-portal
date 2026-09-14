@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import {
   isValidStaffEmail,
   isEduStudentIdentifier,
 } from '../utils/registrationWorkflow'
 import { login } from '../services/api'
-import campusPhoto from '../assets/login/campus.jpg'
+import { isSafeInternalPath } from '../utils/safePath'
+import campusPhoto from '../assets/login/campus1.png'
 import lcLogoWhite from '../assets/login/lc-logo-white.png'
 
 // Login calls the real backend (POST /auth/login) with whatever
@@ -35,6 +37,7 @@ function passwordHint(password) {
    Login — main page component
 ------------------------------------------------------- */
 function Login({ onNavigate, onLogin, sessionExpired, onDismissSessionExpired }) {
+  const location = useLocation()
   const [identifier, setIdentifier] = useState('')
   const [password, setPassword]     = useState('')
   const [reveal, setReveal]         = useState(false)
@@ -81,7 +84,20 @@ function Login({ onNavigate, onLogin, sessionExpired, onDismissSessionExpired })
     try {
       const user = await login(identifier.trim(), password)
       onLogin(user)
-      onNavigate(user.account_type === 'student' ? 'student-portal' : 'admin')
+
+      // A guard (e.g. the Registration route) may have sent the visitor
+      // here with the page they were trying to reach. Only honor it for
+      // a student session landing on a real internal path — an
+      // official/admin always goes to their own dashboard regardless of
+      // what an earlier, unrelated redirect happened to carry, and a
+      // crafted external URL in `from` is never followed.
+      const requestedFrom = location.state?.from
+      const defaultDestination = user.account_type === 'student' ? '/student-portal' : '/admin'
+      const destination = user.account_type === 'student' && isSafeInternalPath(requestedFrom)
+        ? requestedFrom
+        : defaultDestination
+
+      onNavigate(destination, { replace: true })
     } catch (err) {
       setFormError(err.message || 'The ID/email or password you entered is incorrect. Please try again.')
     } finally {
@@ -224,21 +240,12 @@ function Login({ onNavigate, onLogin, sessionExpired, onDismissSessionExpired })
           </div>
 
           <div className="login-back-wrap">
-            <button type="button" className="login-back" onClick={() => onNavigate('home')}>
+            <button type="button" className="login-back" onClick={() => onNavigate('/')}>
               <span aria-hidden="true">&#8592;</span> Back to portal home
             </button>
           </div>
         </div>
       </main>
-
-      <footer className="login-footer">
-        <div className="login-footer__links">
-          <a href="#top">Privacy</a>
-          <a href="#top">Accessibility</a>
-          <a href="mailto:info@livingstone.edu">Support</a>
-        </div>
-        <p className="login-footer__copy">Livingstone College &middot; Office of the Registrar &middot; Authorized use only</p>
-      </footer>
     </div>
   )
 }

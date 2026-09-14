@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+<template id="__bundler_thumbnail" data-bg-color="#EAF2F5">
+<svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+<rect width="1200" height="800" fill="#EAF2F5"/>
+<ellipse cx="600" cy="400" rx="230" ry="215" fill="#8CB0BF"/>
+<text x="600" y="455" text-anchor="middle" font-family="Helvetica,Arial,sans-serif" font-size="190" font-weight="700" fill="#101A1F">LC</text>
+</svg>
+</template>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,300..800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#FFFFFF;color:#15191C;font-family:"Source Sans 3","Helvetica Neue",Helvetica,Arial,sans-serif;font-size:17px;line-height:1.6;-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4,p,ul,li{margin:0;padding:0}
+ul{list-style:none}
+a{color:#15191C;text-decoration:none}
+a:hover{color:#2F5A6B}
+button{font:inherit;cursor:pointer}
+:focus-visible{outline:2px solid #15191C;outline-offset:3px}
+html{scroll-behavior:smooth}
+@keyframes lcFill{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes lcRise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.001ms !important;transition-duration:.001ms !important}}
+</style>
+</helmet>
+
+<div style="background:#FFFFFF;overflow-x:hidden">
+
+  <header style="position:sticky;top:0;z-index:40;background:rgba(255,255,255,.92);backdrop-filter:blur(10px);border-bottom:1px solid #DCE3E6">
+    <div style="max-width:1280px;margin:0 auto;padding:14px clamp(20px,4vw,48px);display:flex;align-items:center;gap:28px">
+      <a href="#top" style="display:flex;align-items:center;gap:12px;flex:none">
+        <span style="position:relative;width:42px;height:42px;flex:none;border-radius:10px;overflow:hidden;background:#A9C6D6;display:block">
+          <img src="assets/lc-mark.png" alt="Livingstone College" style="width:100%;height:100%;display:block">
+        </span>
+        <span style="display:flex;flex-direction:column;line-height:1.2">
+          <span style="font-size:15.5px;font-weight:700;letter-spacing:-0.01em">Livingstone College</span>
+          <span style="font-size:12.5px;color:#5D6870">Registration &amp; Clearance Portal</span>
+        </span>
+      </a>
+      <nav style="display:{{ navRowDisplay }};align-items:center;gap:clamp(14px,2vw,30px);margin-left:auto">
+        <a href="#how-it-works" style="font-size:15px;color:#15191C;padding:6px 2px">How It Works</a>
+        <a href="#benefits" style="font-size:15px;color:#15191C;padding:6px 2px">Benefits</a>
+        <a href="#offices" style="font-size:15px;color:#15191C;padding:6px 2px">Offices</a>
+        <a href="#faqs" style="font-size:15px;color:#15191C;padding:6px 2px">FAQs</a>
+        <a href="#help" style="font-size:15px;color:#15191C;padding:6px 2px">Get Help</a>
+        <a href="#signin" style="font-size:15px;font-weight:700;border:1px solid #15191C;border-radius:10px;padding:9px 20px;margin-left:8px" style-hover="background:#15191C;color:#FFFFFF">Sign In</a>
+      </nav>
+      <button type="button" aria-label="Open menu" aria-expanded="{{ menuOpen }}" onClick="{{ toggleMenu }}" style="display:{{ navToggleDisplay }};margin-left:auto;width:46px;height:46px;border:1px solid #DCE3E6;background:#FFFFFF;border-radius:10px;flex-direction:column;justify-content:center;align-items:center;gap:5px;padding:0">
+        <span style="width:18px;height:1.5px;background:#15191C;display:block"></span>
+        <span style="width:18px;height:1.5px;background:#15191C;display:block"></span>
+        <span style="width:18px;height:1.5px;background:#15191C;display:block"></span>
+      </button>
+    </div>
+    <div style="display:{{ mobileMenuDisplay }};border-top:1px solid #DCE3E6;background:#FFFFFF;padding:10px clamp(20px,4vw,48px) 20px">
+      <div style="display:flex;flex-direction:column">
+        <a href="#how-it-works" onClick="{{ closeMenu }}" style="padding:13px 0;border-bottom:1px solid #F1F4F5;font-size:16px">How It Works</a>
+        <a href="#benefits" onClick="{{ closeMenu }}" style="padding:13px 0;border-bottom:1px solid #F1F4F5;font-size:16px">Benefits</a>
+        <a href="#offices" onClick="{{ closeMenu }}" style="padding:13px 0;border-bottom:1px solid #F1F4F5;font-size:16px">Offices</a>
+        <a href="#faqs" onClick="{{ closeMenu }}" style="padding:13px 0;border-bottom:1px solid #F1F4F5;font-size:16px">FAQs</a>
+        <a href="#help" onClick="{{ closeMenu }}" style="padding:13px 0;font-size:16px">Get Help</a>
+        <a href="#signin" onClick="{{ closeMenu }}" style="margin-top:14px;text-align:center;font-weight:700;border:1px solid #15191C;border-radius:10px;padding:14px 20px">Sign In</a>
+      </div>
+    </div>
+  </header>
+
+  <section id="top" style="position:relative;background:#FFFFFF;padding:clamp(36px,5vw,72px) 0 clamp(48px,6vw,84px)">
+    <div style="position:absolute;top:-120px;right:-140px;width:520px;height:520px;border-radius:50%;background:#EAF2F5;opacity:.75;pointer-events:none"></div>
+    <div style="position:relative;max-width:1280px;margin:0 auto;padding:0 clamp(20px,4vw,48px);display:flex;flex-wrap:wrap;align-items:center;gap:clamp(36px,5vw,72px)">
+
+      <div style="flex:1 1 430px;min-width:0">
+        <p style="font-size:13px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#5D6870;margin-bottom:20px">Livingstone College Registration</p>
+        <h1 style="font-size:clamp(34px,5.2vw,58px);line-height:1.08;letter-spacing:-0.025em;font-weight:700;text-wrap:balance;margin-bottom:24px">Complete registration <span style="color:#2F5A6B">without the long lines.</span></h1>
+        <p style="font-size:clamp(16.5px,1.4vw,19px);color:#5D6870;max-width:52ch;text-wrap:pretty;margin-bottom:34px">Submit your information, follow every required campus clearance, and see exactly what needs your attention from one secure portal.</p>
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:16px">
+          <a href="#signin" style="background:#8CB0BF;color:#000000;font-weight:700;font-size:17px;padding:16px 30px;border-radius:12px;border:1px solid #7BA2B3" style-hover="background:#9DBDC9">Start Registration</a>
+          <a href="#how-it-works" style="font-weight:700;font-size:17px;padding:16px 26px;border-radius:12px;border:1px solid #DCE3E6;color:#15191C" style-hover="border-color:#15191C">See How It Works</a>
+        </div>
+        <p style="font-size:15px;color:#5D6870;margin-top:22px">Already started? <a href="#signin" style="color:#2F5A6B;font-weight:600;text-decoration:underline;text-underline-offset:3px">Sign in to continue.</a></p>
+      </div>
+
+      <div style="flex:1 1 460px;min-width:0;position:relative;padding-bottom:34px">
+        <div style="position:relative;width:100%;aspect-ratio:1.15">
+          <div style="position:absolute;left:6%;top:-4%;width:98%;height:100%;background:#8CB0BF;border-radius:58% 42% 46% 54% / 48% 44% 56% 52%"></div>
+          <div style="position:absolute;left:-4%;top:8%;width:84%;height:88%;background:#EAF2F5;border-radius:44% 56% 60% 40% / 56% 46% 54% 44%"></div>
+          <div style="position:absolute;left:1%;top:2%;width:100%;height:100%;border:1px solid rgba(21,25,28,.28);border-radius:52% 48% 42% 58% / 44% 52% 48% 56%;pointer-events:none"></div>
+          <div style="position:absolute;left:3%;top:4%;width:92%;height:92%;overflow:hidden;border-radius:54% 46% 48% 52% / 46% 50% 50% 54%;background:#DCE3E6">
+            <img src="uploads/pasted-1788137768457-0.png" alt="Livingstone College students with President Anthony Davis at a campus event" style="position:absolute;width:153%;left:-35%;top:-40%;display:block">
+          </div>
+        </div>
+        <div style="position:absolute;left:0;bottom:0;background:#FFFFFF;border:1px solid #DCE3E6;border-radius:16px;padding:16px 20px;box-shadow:0 8px 26px rgba(21,25,28,.09);width:min(280px,80%)">
+          <p style="font-size:12.5px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#5D6870">Fall Registration</p>
+          <p style="font-size:19px;font-weight:700;margin:6px 0 10px">5 of 7 offices cleared</p>
+          <div style="height:7px;border-radius:99px;background:#EAF2F5;overflow:hidden">
+            <div style="height:100%;width:71%;background:#8CB0BF;border-radius:99px;transform-origin:left;animation:lcFill 1.1s cubic-bezier(.22,.7,.2,1) .25s both"></div>
+          </div>
+          <p style="font-size:14.5px;color:#5D6870;margin-top:10px">Next step: <span style="color:#15191C;font-weight:600">Financial Aid</span></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section style="border-top:1px solid #DCE3E6;border-bottom:1px solid #DCE3E6;background:#F6F7F7">
+    <div style="max-width:1280px;margin:0 auto;padding:clamp(24px,3vw,34px) clamp(20px,4vw,48px);display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:clamp(20px,3vw,40px)">
+      <div>
+        <p style="font-size:clamp(26px,2.4vw,32px);font-weight:700;letter-spacing:-0.02em;line-height:1.1">7</p>
+        <p style="font-size:15px;color:#5D6870;margin-top:4px">Campus clearance offices</p>
+      </div>
+      <div>
+        <p style="font-size:clamp(26px,2.4vw,32px);font-weight:700;letter-spacing:-0.02em;line-height:1.1">1</p>
+        <p style="font-size:15px;color:#5D6870;margin-top:4px">Connected workflow</p>
+      </div>
+      <div>
+        <p style="font-size:clamp(26px,2.4vw,32px);font-weight:700;letter-spacing:-0.02em;line-height:1.1">Clear</p>
+        <p style="font-size:15px;color:#5D6870;margin-top:4px">Next-step guidance</p>
+      </div>
+      <div>
+        <p style="font-size:clamp(26px,2.4vw,32px);font-weight:700;letter-spacing:-0.02em;line-height:1.1">Live</p>
+        <p style="font-size:15px;color:#5D6870;margin-top:4px">Real-time status visibility</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="how-it-works" style="padding:clamp(64px,8vw,104px) 0">
+    <div style="max-width:1280px;margin:0 auto;padding:0 clamp(20px,4vw,48px)">
+      <h2 style="font-size:clamp(28px,3.4vw,40px);font-weight:700;letter-spacing:-0.025em;line-height:1.12;max-width:22ch">How registration works</h2>
+      <p style="font-size:clamp(16.5px,1.3vw,18.5px);color:#5D6870;max-width:60ch;margin-top:16px;text-wrap:pretty">Complete the process through one connected portal instead of moving between disconnected systems.</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:clamp(28px,4vw,52px);margin-top:clamp(40px,5vw,60px)">
+        <div style="position:relative;padding-top:26px;border-top:1px solid #DCE3E6">
+          <span style="position:absolute;top:-5px;left:0;width:9px;height:9px;border-radius:50%;background:#8CB0BF"></span>
+          <p style="font-size:13px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#5D6870;margin-bottom:14px">Step 1</p>
+          <h3 style="font-size:21px;font-weight:700;letter-spacing:-0.015em;margin-bottom:10px">Complete your information</h3>
+          <p style="font-size:16.5px;color:#5D6870;text-wrap:pretty">Review your student details and submit the information required for registration.</p>
+        </div>
+        <div style="position:relative;padding-top:26px;border-top:1px solid #DCE3E6">
+          <span style="position:absolute;top:-5px;left:0;width:9px;height:9px;border-radius:50%;background:#8CB0BF"></span>
+          <p style="font-size:13px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#5D6870;margin-bottom:14px">Step 2</p>
+          <h3 style="font-size:21px;font-weight:700;letter-spacing:-0.015em;margin-bottom:10px">Follow your clearances</h3>
+          <p style="font-size:16.5px;color:#5D6870;text-wrap:pretty">See the status of every participating campus office in one place.</p>
+        </div>
+        <div style="position:relative;padding-top:26px;border-top:1px solid #DCE3E6">
+          <span style="position:absolute;top:-5px;left:0;width:9px;height:9px;border-radius:50%;background:#8CB0BF"></span>
+          <p style="font-size:13px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#5D6870;margin-bottom:14px">Step 3</p>
+          <h3 style="font-size:21px;font-weight:700;letter-spacing:-0.015em;margin-bottom:10px">Finish registration</h3>
+          <p style="font-size:16.5px;color:#5D6870;text-wrap:pretty">Resolve outstanding requirements and receive confirmation when registration is complete.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section style="background:#F6F7F7;border-top:1px solid #DCE3E6;border-bottom:1px solid #DCE3E6;padding:clamp(64px,8vw,104px) 0">
+    <div style="max-width:1280px;margin:0 auto;padding:0 clamp(20px,4vw,48px)">
+      <h2 style="font-size:clamp(28px,3.4vw,40px);font-weight:700;letter-spacing:-0.025em;line-height:1.12;max-width:26ch">See exactly where your registration stands.</h2>
+      <p style="font-size:clamp(16.5px,1.3vw,18.5px);color:#5D6870;max-width:60ch;margin-top:16px;text-wrap:pretty">No guessing, no disconnected forms, and no uncertainty about what comes next.</p>
+
+      <div style="margin-top:clamp(36px,4vw,56px);background:#FFFFFF;border:1px solid #DCE3E6;border-radius:18px;overflow:hidden;box-shadow:0 14px 40px rgba(21,25,28,.07)">
+        <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid #DCE3E6;background:#FBFCFC">
+          <span style="width:9px;height:9px;border-radius:50%;background:#DCE3E6;display:block"></span>
+          <span style="width:9px;height:9px;border-radius:50%;background:#DCE3E6;display:block"></span>
+          <span style="width:9px;height:9px;border-radius:50%;background:#DCE3E6;display:block"></span>
+          <span style="margin-left:12px;flex:1;max-width:340px;background:#F1F4F5;border-radius:8px;font-size:12.5px;color:#5D6870;padding:5px 12px;display:block">portal.livingstone.edu/registration</span>
+        </div>
+
+        <div style="padding:clamp(22px,3vw,36px);display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:clamp(24px,3vw,40px)">
+          <div>
+            <p style="font-size:13px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#5D6870">Fall 2026 Registration</p>
+            <p style="font-size:clamp(30px,3vw,40px);font-weight:700;letter-spacing:-0.025em;line-height:1.05;margin:10px 0 4px">71% complete</p>
+            <p style="font-size:16.5px;color:#5D6870">5 of 7 offices cleared</p>
+            <div style="height:9px;border-radius:99px;background:#EAF2F5;overflow:hidden;margin:18px 0 12px">
+              <div style="height:100%;width:71%;background:#8CB0BF;border-radius:99px;transform-origin:left;animation:lcFill 1.2s cubic-bezier(.22,.7,.2,1) both"></div>
+            </div>
+            <p style="font-size:14.5px;color:#5D6870">Registration deadline — Friday, September 11, 2026</p>
+            <div style="margin-top:22px;border:1px solid #E7C89A;background:#FBF3E6;border-radius:14px;padding:16px 18px;display:flex;gap:12px;align-items:flex-start">
+              <span style="flex:none;width:22px;height:22px;border-radius:50%;background:#B87514;color:#FFFFFF;font-size:14px;font-weight:700;display:grid;place-items:center;margin-top:1px">!</span>
+              <span style="display:block">
+                <span style="display:block;font-weight:700;font-size:16.5px">Action required — Financial Aid</span>
+                <span style="display:block;font-size:15.5px;color:#5D6870;margin-top:3px">Submit your verification worksheet to continue.</span>
+              </span>
+            </div>
+          </div>
+
+          <div>
+            <div style="display:flex;align-items:baseline;justify-content:space-between;border-bottom:1px solid #DCE3E6;padding-bottom:10px;margin-bottom:4px">
+              <span style="font-size:13px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#5D6870">Office</span>
+              <span style="font-size:13px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#5D6870">Status</span>
+            </div>
+            <sc-for list="{{ offices }}" as="office" hint-placeholder-count="7">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:13px 0;border-bottom:1px solid #F1F4F5">
+                <span style="font-size:16.5px">{{ office.name }}</span>
+                <span style="display:flex;align-items:center;gap:8px;flex:none;font-size:14.5px;font-weight:600;color:{{ office.fg }};background:{{ office.bg }};border:1px solid {{ office.br }};border-radius:99px;padding:4px 12px">
+                  <span style="font-size:13px;line-height:1">{{ office.glyph }}</span>
+                  <span>{{ office.status }}</span>
+                </span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="benefits" style="padding:clamp(64px,8vw,104px) 0">
+    <div style="max-width:1280px;margin:0 auto;padding:0 clamp(20px,4vw,48px)">
+      <h2 style="font-size:clamp(28px,3.4vw,40px);font-weight:700;letter-spacing:-0.025em;line-height:1.12;max-width:24ch">Registration made clearer for everyone.</h2>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:clamp(30px,4vw,56px);margin-top:clamp(40px,5vw,60px)">
+        <div style="display:flex;gap:18px;align-items:flex-start">
+          <span style="flex:none;width:44px;height:44px;border-radius:12px;border:1px solid #DCE3E6;background:#EAF2F5;display:grid;place-items:center">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2F5A6B" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 12h11"></path><path d="M11 7l5 5-5 5"></path><path d="M20 5v14"></path></svg>
+          </span>
+          <span style="display:block">
+            <span style="display:block;font-size:20px;font-weight:700;letter-spacing:-0.015em;margin-bottom:8px">Know what to do next</span>
+            <span style="display:block;font-size:16.5px;color:#5D6870;text-wrap:pretty">See the exact action required to move your registration forward.</span>
+          </span>
+        </div>
+        <div style="display:flex;gap:18px;align-items:flex-start">
+          <span style="flex:none;width:44px;height:44px;border-radius:12px;border:1px solid #DCE3E6;background:#EAF2F5;display:grid;place-items:center">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2F5A6B" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><path d="M12 8v4l3 2"></path></svg>
+          </span>
+          <span style="display:block">
+            <span style="display:block;font-size:20px;font-weight:700;letter-spacing:-0.015em;margin-bottom:8px">Track every clearance</span>
+            <span style="display:block;font-size:16.5px;color:#5D6870;text-wrap:pretty">Monitor each participating office without visiting multiple locations for updates.</span>
+          </span>
+        </div>
+        <div style="display:flex;gap:18px;align-items:flex-start">
+          <span style="flex:none;width:44px;height:44px;border-radius:12px;border:1px solid #DCE3E6;background:#EAF2F5;display:grid;place-items:center">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2F5A6B" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 20V9l8-5 8 5v11"></path><path d="M9 20v-6h6v6"></path></svg>
+          </span>
+          <span style="display:block">
+            <span style="display:block;font-size:20px;font-weight:700;letter-spacing:-0.015em;margin-bottom:8px">Reduce unnecessary office visits</span>
+            <span style="display:block;font-size:16.5px;color:#5D6870;text-wrap:pretty">Complete available steps online and visit an office only when in-person action is required.</span>
+          </span>
+        </div>
+        <div style="display:flex;gap:18px;align-items:flex-start">
+          <span style="flex:none;width:44px;height:44px;border-radius:12px;border:1px solid #DCE3E6;background:#EAF2F5;display:grid;place-items:center">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2F5A6B" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><path d="M12 8v5"></path><path d="M12 16h.01"></path></svg>
+          </span>
+          <span style="display:block">
+            <span style="display:block;font-size:20px;font-weight:700;letter-spacing:-0.015em;margin-bottom:8px">Resolve problems earlier</span>
+            <span style="display:block;font-size:16.5px;color:#5D6870;text-wrap:pretty">Identify missing information or blocked clearances before registration deadlines.</span>
+          </span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="offices" style="background:#EAF2F5;padding:clamp(64px,8vw,104px) 0">
+    <div style="max-width:1280px;margin:0 auto;padding:0 clamp(20px,4vw,48px)">
+      <h2 style="font-size:clamp(28px,3.4vw,40px);font-weight:700;letter-spacing:-0.025em;line-height:1.12">One portal. Seven connected offices.</h2>
+      <p style="font-size:clamp(16.5px,1.3vw,18.5px);color:#4A565E;max-width:62ch;margin-top:16px;text-wrap:pretty">Each office reviews the requirements assigned to it while students can follow the complete registration process.</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-top:clamp(34px,4vw,48px)">
+        <div style="background:#FFFFFF;border:1px solid #D3E0E6;border-radius:14px;padding:18px 18px 20px">
+          <span style="display:block;width:8px;height:8px;border-radius:50%;background:#8CB0BF;margin-bottom:14px"></span>
+          <span style="display:block;font-size:17px;font-weight:700;letter-spacing:-0.01em">Registrar</span>
+        </div>
+        <div style="background:#FFFFFF;border:1px solid #D3E0E6;border-radius:14px;padding:18px 18px 20px">
+          <span style="display:block;width:8px;height:8px;border-radius:50%;background:#8CB0BF;margin-bottom:14px"></span>
+          <span style="display:block;font-size:17px;font-weight:700;letter-spacing:-0.01em">Health Services</span>
+        </div>
+        <div style="background:#FFFFFF;border:1px solid #D3E0E6;border-radius:14px;padding:18px 18px 20px">
+          <span style="display:block;width:8px;height:8px;border-radius:50%;background:#8CB0BF;margin-bottom:14px"></span>
+          <span style="display:block;font-size:17px;font-weight:700;letter-spacing:-0.01em">Success Center</span>
+        </div>
+        <div style="background:#FFFFFF;border:1px solid #D3E0E6;border-radius:14px;padding:18px 18px 20px">
+          <span style="display:block;width:8px;height:8px;border-radius:50%;background:#8CB0BF;margin-bottom:14px"></span>
+          <span style="display:block;font-size:17px;font-weight:700;letter-spacing:-0.01em">Financial Aid</span>
+        </div>
+        <div style="background:#FFFFFF;border:1px solid #D3E0E6;border-radius:14px;padding:18px 18px 20px">
+          <span style="display:block;width:8px;height:8px;border-radius:50%;background:#8CB0BF;margin-bottom:14px"></span>
+          <span style="display:block;font-size:17px;font-weight:700;letter-spacing:-0.01em">Business Office</span>
+        </div>
+        <div style="background:#FFFFFF;border:1px solid #D3E0E6;border-radius:14px;padding:18px 18px 20px">
+          <span style="display:block;width:8px;height:8px;border-radius:50%;background:#8CB0BF;margin-bottom:14px"></span>
+          <span style="display:block;font-size:17px;font-weight:700;letter-spacing:-0.01em">Residence Life</span>
+        </div>
+        <div style="background:#FFFFFF;border:1px solid #D3E0E6;border-radius:14px;padding:18px 18px 20px">
+          <span style="display:block;width:8px;height:8px;border-radius:50%;background:#8CB0BF;margin-bottom:14px"></span>
+          <span style="display:block;font-size:17px;font-weight:700;letter-spacing:-0.01em">Public Safety</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="faqs" style="padding:clamp(64px,8vw,104px) 0">
+    <div style="max-width:900px;margin:0 auto;padding:0 clamp(20px,4vw,48px)">
+      <h2 style="font-size:clamp(28px,3.4vw,40px);font-weight:700;letter-spacing:-0.025em;line-height:1.12;margin-bottom:clamp(28px,3vw,42px)">Frequently asked questions</h2>
+      <sc-for list="{{ faqs }}" as="faq" hint-placeholder-count="6">
+        <div style="border-bottom:1px solid #DCE3E6">
+          <button type="button" onClick="{{ faq.toggle }}" aria-expanded="{{ faq.open }}" style="width:100%;background:none;border:0;padding:22px 0;display:flex;align-items:flex-start;justify-content:space-between;gap:20px;text-align:left;color:#15191C">
+            <span style="font-size:clamp(17px,1.4vw,19px);font-weight:700;letter-spacing:-0.01em">{{ faq.q }}</span>
+            <span style="flex:none;width:26px;height:26px;border-radius:50%;border:1px solid #DCE3E6;display:grid;place-items:center;font-size:16px;line-height:1;color:#2F5A6B">{{ faq.sign }}</span>
+          </button>
+          <sc-if value="{{ faq.open }}" hint-placeholder-val="{{ false }}">
+            <p style="font-size:16.5px;color:#5D6870;max-width:66ch;padding-bottom:24px;text-wrap:pretty">{{ faq.a }}</p>
+          </sc-if>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <section id="signin" style="background:#EAF2F5;padding:clamp(56px,7vw,92px) 0">
+    <div style="max-width:1280px;margin:0 auto;padding:0 clamp(20px,4vw,48px);text-align:center">
+      <h2 style="font-size:clamp(27px,3.2vw,38px);font-weight:700;letter-spacing:-0.025em;line-height:1.14">Ready to complete your registration?</h2>
+      <p style="font-size:clamp(16.5px,1.3vw,18.5px);color:#4A565E;max-width:52ch;margin:16px auto 32px;text-wrap:pretty">Sign in to continue your registration and see what requires your attention.</p>
+      <div style="display:flex;flex-wrap:wrap;gap:16px;justify-content:center">
+        <a href="#signin" style="background:#8CB0BF;color:#000000;font-weight:700;font-size:17px;padding:16px 32px;border-radius:12px;border:1px solid #7BA2B3" style-hover="background:#9DBDC9">Start Registration</a>
+        <a href="#help" style="font-weight:700;font-size:17px;padding:16px 26px;border-radius:12px;border:1px solid #C3D4DB;color:#15191C" style-hover="border-color:#15191C">Get Help</a>
+      </div>
+    </div>
+  </section>
+
+  <footer id="help" style="background:#101A1F;color:rgba(255,255,255,.72);padding:clamp(52px,6vw,76px) 0 28px">
+    <div style="max-width:1280px;margin:0 auto;padding:0 clamp(20px,4vw,48px)">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:clamp(28px,4vw,48px)">
+        <div>
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px">
+            <span style="position:relative;width:42px;height:42px;flex:none;border-radius:10px;overflow:hidden;background:#A9C6D6;display:block">
+              <img src="assets/lc-mark.png" alt="Livingstone College" style="width:100%;height:100%;display:block">
+            </span>
+            <span style="display:flex;flex-direction:column;line-height:1.25">
+              <span style="font-size:15.5px;font-weight:700;color:#FFFFFF">Livingstone College</span>
+              <span style="font-size:12.5px">Student Registration &amp; Clearance Portal</span>
+            </span>
+          </div>
+          <p style="font-size:14.5px;line-height:1.75">701 W. Monroe Street<br>Salisbury, NC 28144<br>704-216-6001<br><a href="mailto:info@livingstone.edu" style="color:#A9C6D6">info@livingstone.edu</a></p>
+        </div>
+        <div>
+          <p style="font-size:12.5px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#FFFFFF;margin-bottom:16px">Portal</p>
+          <ul style="display:flex;flex-direction:column;gap:11px;font-size:14.5px">
+            <li><a href="#signin" style="color:rgba(255,255,255,.72)" style-hover="color:#FFFFFF">Sign In</a></li>
+            <li><a href="#help" style="color:rgba(255,255,255,.72)" style-hover="color:#FFFFFF">Registration Help</a></li>
+            <li><a href="#faqs" style="color:rgba(255,255,255,.72)" style-hover="color:#FFFFFF">FAQs</a></li>
+            <li><a href="#help" style="color:rgba(255,255,255,.72)" style-hover="color:#FFFFFF">Technical Support</a></li>
+          </ul>
+        </div>
+        <div>
+          <p style="font-size:12.5px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#FFFFFF;margin-bottom:16px">Student resources</p>
+          <ul style="display:flex;flex-direction:column;gap:11px;font-size:14.5px">
+            <li><a href="#offices" style="color:rgba(255,255,255,.72)" style-hover="color:#FFFFFF">Registrar</a></li>
+            <li><a href="#offices" style="color:rgba(255,255,255,.72)" style-hover="color:#FFFFFF">Financial Aid</a></li>
+            <li><a href="#offices" style="color:rgba(255,255,255,.72)" style-hover="color:#FFFFFF">Residence Life</a></li>
+            <li><a href="#offices" style="color:rgba(255,255,255,.72)" style-hover="color:#FFFFFF">Public Safety</a></li>
+          </ul>
+        </div>
+        <div>
+          <p style="font-size:12.5px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#FFFFFF;margin-bottom:16px">College</p>
+          <ul style="display:flex;flex-direction:column;gap:11px;font-size:14.5px">
+            <li><a href="#top" style="color:rgba(255,255,255,.72)" style-hover="color:#FFFFFF">Livingstone College</a></li>
+            <li><a href="#top" style="color:rgba(255,255,255,.72)" style-hover="color:#FFFFFF">Academic Calendar</a></li>
+            <li><a href="#top" style="color:rgba(255,255,255,.72)" style-hover="color:#FFFFFF">Blackboard</a></li>
+            <li><a href="#top" style="color:rgba(255,255,255,.72)" style-hover="color:#FFFFFF">JICS</a></li>
+          </ul>
+        </div>
+      </div>
+      <div style="margin-top:clamp(36px,4vw,52px);padding-top:22px;border-top:1px solid rgba(255,255,255,.14);display:flex;flex-wrap:wrap;gap:12px 26px;align-items:center;font-size:13.5px">
+        <a href="#top" style="color:rgba(255,255,255,.72)" style-hover="color:#FFFFFF">Privacy</a>
+        <a href="#top" style="color:rgba(255,255,255,.72)" style-hover="color:#FFFFFF">Accessibility</a>
+        <span style="margin-left:auto">© 2026 Livingstone College. All rights reserved.</span>
+      </div>
+    </div>
+  </footer>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440}}">
+class Component extends DCLogic {
+  state = { open: 0, menuOpen: false, w: 1440 };
+
+  componentDidMount() {
+    const measure = () => this.setState({ w: window.innerWidth });
+    measure();
+    this._onResize = measure;
+    window.addEventListener('resize', measure);
+  }
+  componentWillUnmount() { window.removeEventListener('resize', this._onResize); }
+
+  renderVals() {
+    const compact = this.state.w < 900;
+    const S = {
+      ok:   { status: 'Approved',        glyph: '✓', fg: '#2F5540', bg: '#EDF4EE', br: '#CBE0D2' },
+      act:  { status: 'Action Required', glyph: '!', fg: '#7A4C0C', bg: '#FBF3E6', br: '#E7C89A' },
+      pend: { status: 'Pending',         glyph: '•', fg: '#5D6870', bg: '#F1F4F5', br: '#DCE3E6' }
+    };
+    const offices = [
+      ['Registrar', S.ok], ['Health Services', S.ok], ['Success Center', S.ok],
+      ['Financial Aid', S.act], ['Business Office', S.ok], ['Residence Life', S.ok],
+      ['Public Safety', S.pend]
+    ].map(([name, s]) => ({ name, ...s }));
+
+    const qa = [
+      ['Who can use the registration portal?', 'Currently enrolled and returning Livingstone College students with an active college account can use the portal to register and follow their clearances.'],
+      ['How do I access my account?', 'Sign in with your Livingstone College credentials. Accounts are issued by the college, so there is no public sign-up.'],
+      ['Can I save my progress and return later?', 'Yes. Your registration information is saved as you go, and you can sign back in to continue where you left off.'],
+      ['What does “Action Required” mean?', 'An office needs something from you before it can approve your clearance — usually a document, a payment arrangement, or a confirmation.'],
+      ['How will I know when an office approves my clearance?', 'The office status updates in your portal and you receive a notification, so you can see your overall completion move forward.'],
+      ['Who should I contact if I cannot sign in?', 'Contact the Registrar’s Office at 704-216-6001 or email info@livingstone.edu, and technical support can restore your access.']
+    ];
+    const faqs = qa.map(([q, a], i) => ({
+      q, a,
+      open: this.state.open === i,
+      sign: this.state.open === i ? '–' : '+',
+      toggle: () => this.setState(s => ({ open: s.open === i ? -1 : i }))
+    }));
+
+    return {
+      offices, faqs,
+      navRowDisplay: compact ? 'none' : 'flex',
+      navToggleDisplay: compact ? 'flex' : 'none',
+      mobileMenuDisplay: compact && this.state.menuOpen ? 'block' : 'none',
+      menuOpen: this.state.menuOpen,
+      toggleMenu: () => this.setState(s => ({ menuOpen: !s.menuOpen })),
+      closeMenu: () => this.setState({ menuOpen: false })
+    };
+  }
+}
+
+</script>
+</body>
+</html>

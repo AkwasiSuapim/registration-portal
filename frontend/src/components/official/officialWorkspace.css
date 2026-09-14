@@ -1,0 +1,409 @@
+/* -------------------------------------------------------
+   officialWorkspace.css
+   -----------------------
+   Styles for the Official Workspace. Extends the Student Workspace's
+   existing visual system — workspace-shell/workspace-sidebar/
+   workspace-card/workspace-panel/btn/status-badge/queue-filter-tab
+   classes (all defined in App.css) are reused as-is; this file only
+   adds the handful of classes those shared ones don't already cover
+   (horizontal application cards, the confirmation dialog, and three
+   new status-badge colors for statuses the Student Workspace never
+   needed: New, In Review, Resubmitted).
+------------------------------------------------------- */
+
+/* Extra status-badge colors — same technique as App.css's existing
+   status-badge--* rules (StatusBadge derives the class from the label). */
+.status-badge--new         { color: #1d4ed8; background: #eff6ff; border: 1px solid #bfdbfe; }
+.status-badge--in-review   { color: #7A4E0E; background: #FDF3E3; border: 1px solid #EBD3A8; }
+.status-badge--resubmitted { color: #2F5A6B; background: #DCEAF0; border: 1px solid #8CB0BF; }
+/* Same status as the student-facing "Correction Required" wording
+   (status-badge--correction-required in App.css) — the Official
+   Workspace spec calls it "Correction Requested," which slugs to a
+   different class name, so it needs its own (identically colored) rule. */
+.status-badge--correction-requested { color: #9a3412; background: #fff7ed; border: 1px solid #fed7aa; }
+
+/* ─── Small inline helpers ──────────────────────────────── */
+
+.official-notice {
+  margin: 0;
+  font-size: 12.5px;
+  color: #5D6870;
+}
+
+.official-notice--inline {
+  color: #7A4E0E;
+}
+
+.official-empty-inline {
+  margin: 0;
+  font-size: 13.5px;
+  color: #5D6870;
+}
+
+.official-comment-label {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #3A464D;
+}
+
+.official-success-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: #E8F3EC;
+  border: 1px solid #BFDCCB;
+  color: #1E4A36;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* ─── Summary cards ─────────────────────────────────────── */
+
+.official-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.official-summary-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 16px 18px;
+  background: #FFFFFF;
+  border: 1px solid #d3dee2;
+  border-radius: 14px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.official-summary-card:hover {
+  border-color: #8CB0BF;
+}
+
+.official-summary-card--active {
+  background: #DCEAF0;
+  border-color: #8CB0BF;
+}
+
+.official-summary-card__value {
+  font-size: 26px;
+  font-weight: 800;
+  color: #15191C;
+}
+
+.official-summary-card__label {
+  font-size: 12.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #5D6870;
+}
+
+@media (max-width: 720px) {
+  .official-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* ─── Search ────────────────────────────────────────────── */
+
+.official-search {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.official-search__input {
+  flex: 1;
+  min-width: 220px;
+  min-height: 44px;
+  border: 1px solid #d3dee2;
+  border-radius: 8px;
+  padding: 0 14px;
+  font-size: 14.5px;
+  color: #15191C;
+  background: #FFFFFF;
+}
+
+.official-search__input:focus-visible {
+  outline: 2px solid #2F5A6B;
+  outline-offset: 1px;
+  border-color: #2F5A6B;
+}
+
+.official-search__result-count {
+  margin: -8px 0 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #3A464D;
+}
+
+/* ─── Sections & horizontal cards ───────────────────────── */
+
+.official-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.official-section__head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.official-section__title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #15191C;
+}
+
+.official-section__subtitle {
+  margin: 0;
+  font-size: 12.5px;
+  color: #5D6870;
+}
+
+.official-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.official-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px 18px;
+  background: #FFFFFF;
+  border: 1px solid #d3dee2;
+  border-radius: 14px;
+}
+
+.official-card__avatar {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #DCEAF0;
+  color: #2F5A6B;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.official-card__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.official-card__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.official-card__name {
+  font-size: 15.5px;
+  font-weight: 700;
+  color: #15191C;
+}
+
+.official-card__meta {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.official-card__meta div {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.official-card__meta dt {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #8A959B;
+}
+
+.official-card__meta dd {
+  margin: 0;
+  font-size: 13.5px;
+  color: #15191C;
+}
+
+.official-card__note {
+  margin: 0;
+  font-size: 12.5px;
+  color: #7A4E0E;
+}
+
+.official-card__actions {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: stretch;
+}
+
+@media (max-width: 720px) {
+  .official-card {
+    flex-direction: column;
+  }
+  .official-card__meta {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .official-card__actions {
+    flex-direction: row;
+    width: 100%;
+  }
+  .official-card__actions .btn {
+    flex: 1;
+  }
+}
+
+/* ─── Notification list ─────────────────────────────────── */
+
+.official-notification-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.official-notification-list__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid #E7ECEE;
+  border-radius: 10px;
+  background: #F8FAFB;
+}
+
+.official-notification-list__item--unread {
+  background: #DCEAF0;
+  border-color: #8CB0BF;
+}
+
+.official-notification-list__main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.official-notification-list__category {
+  font-size: 10.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #2F5A6B;
+}
+
+.official-notification-list__title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #15191C;
+}
+
+.official-notification-list__time {
+  font-size: 11.5px;
+  color: #5D6870;
+}
+
+/* ─── Review History filters ────────────────────────────── */
+
+.official-history-filters {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.official-history-filters__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #3A464D;
+}
+
+.official-history-filters__field select {
+  min-height: 38px;
+  border: 1px solid #d3dee2;
+  border-radius: 8px;
+  padding: 0 10px;
+  font-size: 13.5px;
+  background: #FFFFFF;
+  color: #15191C;
+}
+
+/* ─── Confirmation dialog ───────────────────────────────── */
+
+.official-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(11, 18, 22, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 1000;
+}
+
+.official-modal {
+  width: 100%;
+  max-width: 440px;
+  background: #FFFFFF;
+  border-radius: 16px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: 0 20px 50px rgba(11, 18, 22, 0.35);
+}
+
+.official-modal:focus-visible {
+  outline: none;
+}
+
+.official-modal__title {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 800;
+  color: #15191C;
+}
+
+.official-modal__body {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #3A464D;
+}
+
+.official-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}

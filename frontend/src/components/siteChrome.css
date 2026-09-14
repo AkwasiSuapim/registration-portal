@@ -1,0 +1,559 @@
+/* -------------------------------------------------------
+   siteChrome.css
+   -----------------------
+   The shared header (Navbar), profile control (ProfileMenu), and
+   footer (Footer) used on every page. Kept in its own file — like the
+   registration wizard and Official Workspace features before it —
+   rather than growing the existing App.css further; the old navbar,
+   site-footer, and login-footer rule blocks stay in App.css but are
+   no longer referenced by any component after this change.
+
+   Typography and color continue the app's established system: the
+   same blue (#2563eb) used for every primary button elsewhere, the
+   Student/Official Workspace teal (#8CB0BF / #2F5A6B), and the dark
+   ink (#101A1F) and Livingstone-blue (#8CB0BF) called out for the
+   footer specifically.
+------------------------------------------------------- */
+
+/* ═══════════════════════ Header ═══════════════════════ */
+
+.nav {
+  flex-shrink: 0;
+  background: #fff;
+  border-bottom: 1px solid #eef1f5;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  position: relative;
+  z-index: 40;
+}
+
+.nav__bar {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 0 32px;
+  height: 68px;
+  max-width: 1360px;
+  margin: 0 auto;
+}
+
+.nav__brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: none;
+  border: none;
+  padding: 6px 4px;
+  cursor: pointer;
+  flex-shrink: 0;
+  border-radius: 8px;
+}
+
+.nav__brand-mark {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.nav__brand-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.2;
+}
+
+.nav__brand-name {
+  font-size: 14.5px;
+  font-weight: 800;
+  color: #101a1f;
+}
+
+.nav__brand-subtitle {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #8a959b;
+}
+
+.nav__links {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: 1;
+  margin-left: 12px;
+}
+
+.nav-link {
+  background: none;
+  border: none;
+  padding: 8px 14px;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #3a464d;
+  border-radius: 20px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+}
+
+.nav-link:hover {
+  background: #f1f5f9;
+  color: #101a1f;
+}
+
+.nav__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+/* Rounded pill actions — same blue used across the rest of the app
+   for primary actions (.btn--primary), just shaped as a pill here. */
+.nav-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 9px 20px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.nav-pill--outline {
+  background: #fff;
+  color: #2563eb;
+  border: 1.5px solid #2563eb;
+}
+
+.nav-pill--outline:hover {
+  background: #eff6ff;
+}
+
+.nav-pill--primary {
+  background: #2563eb;
+  color: #fff;
+  border: 1.5px solid #2563eb;
+}
+
+.nav-pill--primary:hover {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+}
+
+/* ─── Mobile menu button (hidden on desktop) ────────────── */
+
+.nav__menu-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: none;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.nav__menu-icon {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 18px;
+}
+
+.nav__menu-icon span {
+  display: block;
+  height: 2px;
+  background: #101a1f;
+  border-radius: 2px;
+  transition: transform 0.15s, opacity 0.15s;
+}
+
+.nav__menu-icon--open span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+.nav__menu-icon--open span:nth-child(2) { opacity: 0; }
+.nav__menu-icon--open span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+
+/* ─── Mobile drawer ──────────────────────────────────────── */
+
+.nav-drawer-overlay {
+  position: fixed;
+  inset: 0;
+  top: 68px;
+  background: rgba(11, 18, 22, 0.4);
+  z-index: 39;
+}
+
+.nav-drawer {
+  background: #fff;
+  border-bottom: 1px solid #eef1f5;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
+  padding: 12px 20px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: calc(100vh - 68px);
+  overflow-y: auto;
+}
+
+.nav-drawer__link {
+  text-align: left;
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-size: 14px;
+}
+
+.nav-drawer__link:hover {
+  background: #f1f5f9;
+}
+
+.nav-drawer__footer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+  padding-top: 14px;
+  border-top: 1px solid #eef1f5;
+}
+
+.nav-drawer__footer .nav-pill {
+  width: 100%;
+}
+
+/* ═══════════════════════ Profile menu ═══════════════════════ */
+
+.profile-menu {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.profile-menu__trigger {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  background: none;
+  border: 1px solid transparent;
+  padding: 5px 10px 5px 5px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.profile-menu__trigger:hover {
+  background: #f4f8f9;
+  border-color: #d3dee2;
+}
+
+.profile-menu__avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #dceaf0;
+  color: #2f5a6b;
+  font-size: 13px;
+  font-weight: 800;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.profile-menu__avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-menu__text {
+  display: none;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.2;
+}
+
+.profile-menu__name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #101a1f;
+}
+
+.profile-menu__role {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #5d6870;
+}
+
+.profile-menu__chevron {
+  display: none;
+  width: 14px;
+  height: 14px;
+  color: #8a959b;
+  flex-shrink: 0;
+}
+
+@media (min-width: 860px) {
+  .profile-menu__text,
+  .profile-menu__chevron {
+    display: flex;
+  }
+}
+
+.profile-menu__panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 220px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.14);
+  overflow: hidden;
+  z-index: 50;
+}
+
+.profile-menu__panel-header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 14px 16px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.profile-menu__panel-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #101a1f;
+}
+
+.profile-menu__panel-role {
+  font-size: 12px;
+  color: #5d6870;
+}
+
+.profile-menu__logout {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 12px 16px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #b4342e;
+  cursor: pointer;
+}
+
+.profile-menu__logout:hover {
+  background: #fbf0ef;
+}
+
+/* ═══════════════════════ Focus states ═══════════════════════ */
+
+.nav__brand:focus-visible,
+.nav-link:focus-visible,
+.nav-pill:focus-visible,
+.nav__menu-btn:focus-visible,
+.profile-menu__trigger:focus-visible,
+.profile-menu__logout:focus-visible,
+.site-footer-v2 a:focus-visible,
+.site-footer-v2__signin:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+/* ═══════════════════════ Responsive ═══════════════════════ */
+
+@media (max-width: 900px) {
+  .nav__links {
+    display: none;
+  }
+  .nav__actions .nav-pill {
+    display: none;
+  }
+  .nav__menu-btn {
+    display: flex;
+  }
+}
+
+@media (min-width: 901px) {
+  .nav-drawer-overlay {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .nav__bar {
+    padding: 0 16px;
+    gap: 12px;
+  }
+  .nav__brand-text {
+    display: none;
+  }
+}
+
+/* ═══════════════════════ Footer ═══════════════════════ */
+
+.site-footer-v2 {
+  flex-shrink: 0;
+  background: #8cb0bf;
+  color: #101a1f;
+}
+
+.site-footer-v2__inner {
+  max-width: 1360px;
+  margin: 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.site-footer-v2--full .site-footer-v2__inner {
+  padding: 40px 32px 26px;
+}
+
+.site-footer-v2--compact .site-footer-v2__inner {
+  padding: 16px 32px;
+  align-items: center;
+}
+
+.site-footer-v2__brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.site-footer-v2__mark {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.site-footer-v2--compact .site-footer-v2__mark {
+  width: 26px;
+  height: 26px;
+}
+
+.site-footer-v2__brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+
+.site-footer-v2__name {
+  font-size: 14.5px;
+  font-weight: 800;
+}
+
+.site-footer-v2--compact .site-footer-v2__name {
+  font-size: 13px;
+}
+
+.site-footer-v2__tagline {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: rgba(16, 26, 31, 0.72);
+}
+
+.site-footer-v2--compact .site-footer-v2__tagline {
+  display: none;
+}
+
+.site-footer-v2__contact {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 240px;
+}
+
+.site-footer-v2__heading {
+  margin: 0;
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(16, 26, 31, 0.78);
+}
+
+.site-footer-v2__address {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.7;
+}
+
+.site-footer-v2__address a {
+  color: #101a1f;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.site-footer-v2__address a:hover {
+  text-decoration: underline;
+}
+
+.site-footer-v2__signin {
+  align-self: flex-start;
+  background: #101a1f;
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 8px 18px;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.site-footer-v2__signin:hover {
+  background: #23343d;
+}
+
+.site-footer-v2__legal {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.site-footer-v2__legal a {
+  color: #101a1f;
+  text-decoration: none;
+}
+
+.site-footer-v2__legal a:hover {
+  text-decoration: underline;
+}
+
+.site-footer-v2__copy {
+  color: rgba(16, 26, 31, 0.72);
+}
+
+.site-footer-v2--full .site-footer-v2__legal {
+  width: 100%;
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(16, 26, 31, 0.16);
+}
+
+@media (max-width: 640px) {
+  .site-footer-v2__inner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .site-footer-v2--compact .site-footer-v2__inner {
+    align-items: flex-start;
+  }
+}
