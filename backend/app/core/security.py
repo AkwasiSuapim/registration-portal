@@ -18,12 +18,38 @@ Two things live here:
      just the token claims. A stale or tampered token cannot grant new roles.
 """
 
+import secrets
+import string
 from datetime import datetime, timedelta, timezone
 
 import bcrypt as _bcrypt
 from jose import jwt
 
 from app.core.config import settings
+
+# Characters used for generated temporary passwords. Excludes visually
+# ambiguous characters (0/O, 1/l/I) since these are read aloud or typed
+# by hand by an administrator handing them to a new student/official.
+_TEMP_PASSWORD_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789"
+_TEMP_PASSWORD_SYMBOLS = "!@#$%*"
+
+
+def generate_temporary_password(length: int = 12) -> str:
+    """
+    Returns a random temporary password for an admin-created account.
+
+    Uses the `secrets` module (cryptographically secure), guarantees at
+    least one digit and one symbol so it satisfies typical password
+    policies, and avoids visually-ambiguous characters. Returned as
+    plain text exactly once, to the admin who created the account — the
+    caller is responsible for never logging or persisting it, only the
+    bcrypt hash is ever stored.
+    """
+    body = [secrets.choice(_TEMP_PASSWORD_ALPHABET) for _ in range(length - 2)]
+    body.append(secrets.choice(string.digits))
+    body.append(secrets.choice(_TEMP_PASSWORD_SYMBOLS))
+    secrets.SystemRandom().shuffle(body)
+    return "".join(body)
 
 
 def hash_password(password: str) -> str:

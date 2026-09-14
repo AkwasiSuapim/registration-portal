@@ -1,8 +1,12 @@
 import { useEffect, useState } from 'react'
-import { getOfficeAssignments, reassignOfficial, isMissingEndpoint } from '../../services/adminApi'
+import { listAdminUsers, reassignOfficialOffice } from '../../services/adminApi'
 import { OFFICE_ROLE_OPTIONS, officeLabel } from './adminConstants'
 import ConfirmDialog from '../official/ConfirmDialog'
-import MissingEndpointNotice from './MissingEndpointNotice'
+
+// Large enough to cover every official account in one page — the college
+// has seven offices, not seven hundred officials, so a single request is
+// simpler and just as correct as adding real pagination here.
+const OFFICIAL_PAGE_SIZE = 500
 
 /* -------------------------------------------------------
    AssignmentPicker — the "pick a new primary office" step, shown
@@ -19,11 +23,10 @@ function AssignmentPicker({ official, onCancel, onContinue }) {
           Assign {official.name} to an office
         </h2>
         <p className="official-modal__body">
-          Currently: {official.role_key ? officeLabel(official.role_key) : 'Unassigned'}.
-          An official can hold only one primary office at a time.
+          Currently: {officeLabel(official.office)}. An official can hold only one primary office at a time.
         </p>
         <div className="admin-radio-grid" role="radiogroup" aria-label="New primary office">
-          {OFFICE_ROLE_OPTIONS.filter((opt) => opt.value !== official.role_key).map((opt) => (
+          {OFFICE_ROLE_OPTIONS.filter((opt) => opt.value !== official.office).map((opt) => (
             <label key={opt.value} className="admin-radio-option">
               <input
                 type="radio"
@@ -49,13 +52,15 @@ function AssignmentPicker({ official, onCancel, onContinue }) {
 
 /* -------------------------------------------------------
    OfficeAssignmentsPage — officials grouped by their one primary
-   office (GET /admin/offices), with an assign/reassign flow that
-   always goes through a confirmation dialog before submitting.
+   office. There is no dedicated "list offices" endpoint — this groups
+   the results of GET /admin/users?role=official client-side, which the
+   directory already returns with each official's office. Reassignment
+   goes through PUT /admin/officials/{id}/office and always requires
+   confirmation before submitting.
 ------------------------------------------------------- */
 function OfficeAssignmentsPage() {
-  const [data, setData]       = useState(null)
+  const [officials, setOfficials] = useState([])
   const [loading, setLoading] = useState(true)
-  const [missing, setMissing] = useState(false)
   const [error, setError]     = useState('')
 
   const [picking, setPicking]         = useState(null) // official being (re)assigned
@@ -74,15 +79,12 @@ function OfficeAssignmentsPage() {
     let cancelled = false
     async function run() {
       setLoading(true)
-      setMissing(false)
       setError('')
       try {
-        const result = await getOfficeAssignments()
-        if (!cancelled) setData(result)
+        const result = await listAdminUsers({ role: 'official', page_size: OFFICIAL_PAGE_SIZE })
+        if (!cancelled) setOfficials(result.items || [])
       } catch (err) {
-        if (cancelled) return
-        if (isMissingEndpoint(err)) setMissing(true)
-        else setError(err.message)
+        if (!cancelled) setError(err.message)
       } finally {
         if (!cancelled) setLoading(false)
       }
@@ -96,16 +98,12 @@ function OfficeAssignmentsPage() {
     setSubmitting(true)
     setActionError('')
     try {
-      await reassignOfficial(official.id, newOffice)
-      setSuccessMessage(`${official.name} was assigned to ${officeLabel(newOffice)}.`)
+      await reassignOfficialOffice(official.id, newOffice)
+      setSuccessMessage(`${official.first_name} ${official.last_name} was assigned to ${officeLabel(newOffice)}.`)
       setPendingChange(null)
       load()
     } catch (err) {
-      setActionError(
-        isMissingEndpoint(err)
-          ? 'This action is not available yet — the backend does not support office reassignment (PATCH /admin/officials/{id}/office).'
-          : err.message
-      )
+      setActionError(err.message)
       setPendingChange(null)
     } finally {
       setSubmitting(false)
@@ -131,8 +129,6 @@ function OfficeAssignmentsPage() {
       <section className="workspace-card">
         {loading ? (
           <p className="app-detail__empty">Loading office assignments…</p>
-        ) : missing ? (
-          <MissingEndpointNotice endpoint="GET /admin/offices" onRetry={load} />
         ) : error ? (
           <div className="workspace-error" role="alert">
             <span className="workspace-error__icon" aria-hidden="true">!</span>
@@ -145,62 +141,38 @@ function OfficeAssignmentsPage() {
             </div>
           </div>
         ) : (
-          <>
-            <div className="admin-office-assign-grid">
-              {OFFICE_ROLE_OPTIONS.map((office) => {
-                const group = data?.offices?.find((o) => o.role_key === office.value)
-                const officials = group?.officials || []
-                return (
-                  <div key={office.value} className="admin-office-assign-card">
-                    <div className="admin-office-assign-card__head">
-                      <span className="admin-office-assign-card__name">{office.label}</span>
-                      <span className="admin-office-assign-card__count">{officials.length}</span>
-                    </div>
-                    {officials.length === 0 ? (
-                      <p className="official-empty-inline">No officials assigned.</p>
-                    ) : (
-                      officials.map((official) => (
-                        <div key={official.id} className="admin-official-row">
-                          <span>
-                            <span className="admin-official-row__name">{official.name}</span>
-                            <span className="admin-official-row__email">{official.email}</span>
-                          </span>
-                          <button
-                            type="button"
-                            className="btn btn--outline btn--small"
-                            onClick={() => setPicking({ ...official, role_key: office.value })}
-                          >
-                            Change
-                          </button>
-                        </div>
-                      ))
-                    )}
+          <div className="admin-office-assign-grid">
+            {OFFICE_ROLE_OPTIONS.map((office) => {
+              const group = officials.filter((o) => o.office === office.value)
+              return (
+                <div key={office.value} className="admin-office-assign-card">
+                  <div className="admin-office-assign-card__head">
+                    <span className="admin-office-assign-card__name">{office.label}</span>
+                    <span className="admin-office-assign-card__count">{group.length}</span>
                   </div>
-                )
-              })}
-            </div>
-
-            <section aria-labelledby="admin-unassigned-h">
-              <h3 id="admin-unassigned-h" className="workspace-card__title">Unassigned Officials</h3>
-              {(data?.unassigned || []).length === 0 ? (
-                <p className="official-empty-inline">No unassigned officials.</p>
-              ) : (
-                <div className="admin-office-assign-card">
-                  {data.unassigned.map((official) => (
-                    <div key={official.id} className="admin-official-row">
-                      <span>
-                        <span className="admin-official-row__name">{official.name}</span>
-                        <span className="admin-official-row__email">{official.email}</span>
-                      </span>
-                      <button type="button" className="btn btn--outline btn--small" onClick={() => setPicking(official)}>
-                        Assign
-                      </button>
-                    </div>
-                  ))}
+                  {group.length === 0 ? (
+                    <p className="official-empty-inline">No officials assigned.</p>
+                  ) : (
+                    group.map((official) => (
+                      <div key={official.id} className="admin-official-row">
+                        <span>
+                          <span className="admin-official-row__name">{official.first_name} {official.last_name}</span>
+                          <span className="admin-official-row__email">{official.email}</span>
+                        </span>
+                        <button
+                          type="button"
+                          className="btn btn--outline btn--small"
+                          onClick={() => setPicking(official)}
+                        >
+                          Change
+                        </button>
+                      </div>
+                    ))
+                  )}
                 </div>
-              )}
-            </section>
-          </>
+              )
+            })}
+          </div>
         )}
       </section>
 
@@ -218,7 +190,7 @@ function OfficeAssignmentsPage() {
       {pendingChange && (
         <ConfirmDialog
           title="Confirm office assignment"
-          body={`Assign ${pendingChange.official.name} to ${officeLabel(pendingChange.newOffice)}? This changes which queue their applications appear in immediately.`}
+          body={`Assign ${pendingChange.official.first_name} ${pendingChange.official.last_name} to ${officeLabel(pendingChange.newOffice)}? This changes which queue their applications appear in immediately.`}
           confirmLabel="Confirm Assignment"
           tone="primary"
           submitting={submitting}

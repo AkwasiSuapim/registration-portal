@@ -45,6 +45,11 @@ class User(Base):
     account_type = Column(String, nullable=False)
     role_id = Column(SmallInteger, ForeignKey("roles.id"), nullable=False)
     is_active = Column(Boolean, nullable=False, default=True)
+    # True for every admin-created account until the user changes their
+    # temporary password. Exposed on GET /auth/me / login so the frontend
+    # can force a password-change screen; nothing currently clears it but
+    # POST /auth/change-password (see auth routes) sets it back to False.
+    must_change_password = Column(Boolean, nullable=False, default=False)
     last_login_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
     updated_at = Column(

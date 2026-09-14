@@ -152,8 +152,11 @@ export async function request(path, { method = 'GET', body, auth = true } = {}) 
   return data
 }
 
-// Multipart form upload — used only for document upload.
-async function requestForm(path, formData) {
+// Multipart form upload — used for document uploads. Exported (like
+// request/buildQueryString) so other service files, such as
+// services/registrationApi.js, can upload to a different path with the
+// same auth header / error handling instead of duplicating this.
+export async function requestForm(path, formData) {
   const headers = {}
   const token = getToken()
   if (token) headers['Authorization'] = `Bearer ${token}`

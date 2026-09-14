@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react'
-import { listAdminUsers, setUserActiveStatus, isMissingEndpoint } from '../../services/adminApi'
+import { listAdminUsers, activateUser, deactivateUser } from '../../services/adminApi'
 import { OFFICE_ROLE_OPTIONS } from './adminConstants'
 import StatusBadge from '../StatusBadge'
 import ConfirmDialog from '../official/ConfirmDialog'
-import MissingEndpointNotice from './MissingEndpointNotice'
 
 const PAGE_SIZE = 20
 
@@ -56,7 +55,6 @@ function UserManagementPage({ onNavigate }) {
 
   const [result, setResult]   = useState(null)
   const [loading, setLoading] = useState(true)
-  const [missing, setMissing] = useState(false)
   const [error, setError]     = useState('')
 
   const [pendingToggle, setPendingToggle] = useState(null) // user row awaiting confirmation
@@ -74,7 +72,6 @@ function UserManagementPage({ onNavigate }) {
     let cancelled = false
     async function run() {
       setLoading(true)
-      setMissing(false)
       setError('')
       try {
         const result = await listAdminUsers({
@@ -87,9 +84,7 @@ function UserManagementPage({ onNavigate }) {
         })
         if (!cancelled) setResult(result)
       } catch (err) {
-        if (cancelled) return
-        if (isMissingEndpoint(err)) setMissing(true)
-        else setError(err.message)
+        if (!cancelled) setError(err.message)
       } finally {
         if (!cancelled) setLoading(false)
       }
@@ -114,11 +109,15 @@ function UserManagementPage({ onNavigate }) {
   }
 
   const handleEdit = (user) => {
-    onNavigate(
-      user.account_type === 'student'
-        ? `/admin/students/${user.id}/edit`
-        : `/admin/officials/${user.id}/edit`
-    )
+    // There is no GET /admin/users/{id} — the row already has everything
+    // the Edit form needs, so it's passed through router state instead
+    // of being re-fetched by id. A direct link/refresh into an edit URL
+    // has no state to read; AdminStudentForm/AdminOfficialForm handle
+    // that by sending the admin back to User Management.
+    const path = user.account_type === 'student'
+      ? `/admin/students/${user.id}/edit`
+      : `/admin/officials/${user.id}/edit`
+    onNavigate(path, { state: { user } })
   }
 
   const handleView = (user) => {
@@ -136,16 +135,13 @@ function UserManagementPage({ onNavigate }) {
     setToggleSubmitting(true)
     setToggleError('')
     try {
-      await setUserActiveStatus(user.user_id, !user.is_active)
+      if (user.is_active) await deactivateUser(user.user_id)
+      else await activateUser(user.user_id)
       setSuccessMessage(`${user.first_name} ${user.last_name} was ${user.is_active ? 'deactivated' : 'activated'}.`)
       setPendingToggle(null)
       load()
     } catch (err) {
-      setToggleError(
-        isMissingEndpoint(err)
-          ? 'This action is not available yet — the backend does not support account status changes (PATCH /admin/users/{id}/status).'
-          : err.message
-      )
+      setToggleError(err.message)
       setPendingToggle(null)
     } finally {
       setToggleSubmitting(false)
@@ -232,8 +228,6 @@ function UserManagementPage({ onNavigate }) {
       <section className="workspace-card">
         {loading ? (
           <p className="app-detail__empty">Loading users…</p>
-        ) : missing ? (
-          <MissingEndpointNotice endpoint="GET /admin/users" onRetry={load} />
         ) : error ? (
           <div className="workspace-error" role="alert">
             <span className="workspace-error__icon" aria-hidden="true">!</span>

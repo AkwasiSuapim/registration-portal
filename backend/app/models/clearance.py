@@ -81,6 +81,15 @@ class Clearance(Base):
         nullable=True,
     )
     reviewed_at = Column(DateTime(timezone=True), nullable=True)
+    # Set by POST /official/applications/{id}/claim so office staff can see
+    # a clearance is already being worked on by a colleague. Cleared by
+    # .../unclaim or automatically once a decision is recorded.
+    claimed_by_official_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("officials.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    claimed_at = Column(DateTime(timezone=True), nullable=True)
     # Message left by the office for the student (e.g. correction instructions)
     message = Column(Text, nullable=True)
     # When the clearance first became available for review
@@ -102,6 +111,7 @@ class Clearance(Base):
         back_populates="reviewed_clearances",
         foreign_keys=[reviewed_by_official_id],
     )
+    claimed_by = relationship("Official", foreign_keys=[claimed_by_official_id])
 
 
 class ClearanceDependency(Base):

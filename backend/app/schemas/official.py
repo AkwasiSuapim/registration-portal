@@ -46,9 +46,13 @@ class ApplicationReviewResponse(BaseModel):
 
     id: UUID
     application_number: str
-    term_code: str
-    academic_year: str
-    major: str
+    # Nullable: an admin's Student Record link could in principle resolve
+    # to a not-yet-submitted draft (overall_status='draft', created via
+    # POST /registrations) — see app/schemas/application.py
+    # ApplicationResponse for the same reasoning.
+    term_code: str | None
+    academic_year: str | None
+    major: str | None
     classification: str | None
     housing_required: bool
     overall_status: str

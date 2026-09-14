@@ -11,13 +11,14 @@ function formatFileSize(bytes) {
 /* -------------------------------------------------------
    FileUploadField — one reusable upload control used across every
    step. Slot shape: { file, name, size, status, error, documentId }
-   status: 'selected' (chosen locally, not sent yet) | 'uploading' |
-           'uploaded' (confirmed by the server) | 'error'
+   status: 'selected' (chosen locally, upload about to start) |
+           'uploading' | 'uploaded' (confirmed by the server) | 'error'
 
-   Uploads only reach the server once the application is created at
-   final submission (see registrationAdapter.js) — before that, this
-   field shows a clearly-labeled local "Selected" state rather than
-   claiming anything was saved.
+   The wizard always has a real draft applicationId by the time any
+   step is interactive, so a file starts uploading the moment it's
+   selected (see RegistrationWizard.jsx's updateUploadSlot) — the brief
+   'selected' state is just the gap between choosing the file and the
+   upload request actually starting, not a "not sent yet" holding state.
 ------------------------------------------------------- */
 function FileUploadField({ label, required, helpText, accept, slot, onSelect, onRemove, disabled }) {
   const inputRef = useRef(null)

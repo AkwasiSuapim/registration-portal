@@ -6,8 +6,18 @@
 ------------------------------------------------------- */
 import { MIN_CREDIT_HOURS, COURSE_OPTIONS } from './wizardConfig'
 
+// A slot counts as uploaded either because a file was just selected and
+// confirmed by the server in this session (slot.file present, status
+// 'uploaded'), or because it was already on file when a draft was
+// resumed — registrationAdapter.js's hydrateUploadSlotsFromDocuments
+// sets status 'uploaded' with file: null in that case (there is no
+// local File object to re-attach, only the backend's record of it), so
+// checking slot.file alone would wrongly block a student who already
+// uploaded this document in an earlier session from advancing.
 function isUploaded(slot) {
-  return Boolean(slot && slot.file && slot.status !== 'error')
+  if (!slot) return false
+  if (slot.status === 'uploaded') return true
+  return Boolean(slot.file && slot.status !== 'error')
 }
 
 export function validateWelcomeDesk(state) {

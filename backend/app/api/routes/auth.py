@@ -17,7 +17,14 @@ from app.core.security import create_access_token, hash_password, verify_passwor
 from app.database import get_db
 from app.models.student import Student
 from app.models.user import User
-from app.schemas.auth import CurrentUserResponse, LoginRequest, LoginResponse
+from app.schemas.auth import (
+    ChangePasswordRequest,
+    ChangePasswordResponse,
+    CurrentUserResponse,
+    LoginRequest,
+    LoginResponse,
+)
+from app.services import audit_service
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
@@ -81,6 +88,7 @@ def _build_user_response(user: User) -> CurrentUserResponse:
         role_key=user.role.role_key,
         role_name=user.role.role_name,
         is_active=user.is_active,
+        must_change_password=user.must_change_password,
     )
 
 
@@ -127,3 +135,40 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
 def get_me(current_user: User = Depends(deps.get_current_user)):
     """Returns the profile of the currently authenticated user."""
     return _build_user_response(current_user)
+
+
+@router.post("/change-password", response_model=ChangePasswordResponse)
+def change_password(
+    request: ChangePasswordRequest,
+    current_user: User = Depends(deps.get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Lets a signed-in user change their own password.
+
+    Requires the current password (whether it's the temporary password an
+    admin issued, or a password the user already changed once). On
+    success, clears must_change_password — see users.must_change_password
+    for how the frontend is expected to use that flag.
+    """
+    try:
+        request.validate_strength()
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+
+    if not verify_password(request.current_password, current_user.password_hash):
+        raise HTTPException(status_code=401, detail="Current password is incorrect.")
+
+    current_user.password_hash = hash_password(request.new_password)
+    current_user.must_change_password = False
+
+    audit_service.create_audit_log(
+        db=db,
+        actor_user_id=current_user.id,
+        application_id=None,
+        action="password_changed",
+        actor_role_id=current_user.role_id,
+    )
+    db.commit()
+
+    return ChangePasswordResponse()

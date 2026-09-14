@@ -105,14 +105,23 @@ function App() {
   // token is missing, expired, or invalid, this simply leaves the user
   // logged out (api.js already clears a bad token for us).
   useEffect(() => {
-    if (!getToken()) {
-      setRestoringSession(false)
-      return
+    let cancelled = false
+    async function run() {
+      if (!getToken()) {
+        if (!cancelled) setRestoringSession(false)
+        return
+      }
+      try {
+        const user = await getCurrentUser()
+        if (!cancelled) setCurrentSession(user)
+      } catch {
+        // api.js already clears a bad token for us
+      } finally {
+        if (!cancelled) setRestoringSession(false)
+      }
     }
-    getCurrentUser()
-      .then((user) => setCurrentSession(user))
-      .catch(() => {})
-      .finally(() => setRestoringSession(false))
+    run()
+    return () => { cancelled = true }
   }, [])
 
   // Any API call that gets a 401 on an authenticated request dispatches

@@ -1,15 +1,20 @@
 import { useEffect, useRef, useState } from 'react'
 
 /* -------------------------------------------------------
-   SubmissionModal — shown once after a successful POST /applications.
+   SubmissionModal — shown once after a successful
+   POST /registrations/{id}/submit.
 
    Public Safety / Student ID processing happens in person and is not
    one of the seven online steps, so this modal is the one place that
-   tells the student about it. The same instruction stays visible on
-   the dashboard afterward (see the Overview tab's Public Safety
-   notice in StudentPortal.jsx) so dismissing this modal never loses it.
+   tells the student about it — using the backend's own
+   public_safety_instruction object (title/message) when the submit
+   response includes one, with the same copy as a fallback if it
+   doesn't. The same instruction stays visible on the dashboard
+   afterward (see the Overview tab's Public Safety notice in
+   StudentPortal.jsx, which derives it from real clearance data) so
+   dismissing this modal never loses it.
 ------------------------------------------------------- */
-function SubmissionModal({ applicationNumber, documentFailureCount, onReturnToDashboard }) {
+function SubmissionModal({ applicationNumber, publicSafetyInstruction, documentFailureCount, onReturnToDashboard }) {
   const [showInstructions, setShowInstructions] = useState(false)
   const dialogRef = useRef(null)
   const titleId = 'submission-modal-title'
@@ -41,10 +46,14 @@ function SubmissionModal({ applicationNumber, documentFailureCount, onReturnToDa
         )}
 
         <p className="reg-modal__body">
-          One step still requires an in-person visit: bring a valid photo ID to the{' '}
-          <strong>Public Safety Office</strong> to have your Student ID processed. Public Safety
-          is not an online form — it will show as <strong>“In-person action required”</strong>{' '}
-          in your Clearance Tracker until an authorized official completes it there.
+          {publicSafetyInstruction?.message || (
+            <>
+              One step still requires an in-person visit: bring a valid photo ID to the{' '}
+              <strong>Public Safety Office</strong> to have your Student ID processed. Public Safety
+              is not an online form — it will show as <strong>“In-person action required”</strong>{' '}
+              in your Clearance Tracker until an authorized official completes it there.
+            </>
+          )}
         </p>
 
         {documentFailureCount > 0 && (

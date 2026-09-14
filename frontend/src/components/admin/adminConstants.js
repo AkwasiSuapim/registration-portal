@@ -11,17 +11,18 @@
    chosen by the frontend.
 ------------------------------------------------------- */
 
-// The seven office roles an Official account can be assigned to.
-// value = roles.role_key, label = roles.role_name as shown elsewhere
-// in the app.
+// The seven office roles an Official account can be assigned to. value =
+// the backend's canonical OfficeKey enum (app/core/enums.py) — sent as-is
+// in office filters, primary_office on creation, and the office
+// reassignment body. label = roles.role_name as shown elsewhere in the app.
 export const OFFICE_ROLE_OPTIONS = [
-  { value: 'registrar',        label: 'Registrar' },
-  { value: 'health_services',  label: 'Health Services' },
-  { value: 'success_center',   label: 'Success Center' },
-  { value: 'financial_aid',    label: 'Financial Aid' },
-  { value: 'business_office',  label: 'Business Office' },
-  { value: 'residence_life',   label: 'Residence Life' },
-  { value: 'public_safety',    label: 'Public Safety' },
+  { value: 'REGISTRAR',        label: 'Registrar' },
+  { value: 'HEALTH_SERVICES',  label: 'Health Services' },
+  { value: 'SUCCESS_CENTER',   label: 'Success Center' },
+  { value: 'FINANCIAL_AID',    label: 'Financial Aid' },
+  { value: 'BUSINESS_OFFICE',  label: 'Business Office' },
+  { value: 'RESIDENCE_LIFE',   label: 'Residence Life' },
+  { value: 'PUBLIC_SAFETY',    label: 'Public Safety' },
 ]
 
 export function officeLabel(roleKey) {

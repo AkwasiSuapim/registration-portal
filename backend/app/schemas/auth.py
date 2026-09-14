@@ -20,6 +20,7 @@ class CurrentUserResponse(BaseModel):
     role_key: str
     role_name: str
     is_active: bool
+    must_change_password: bool
 
     model_config = {"from_attributes": True}
 
@@ -28,3 +29,16 @@ class LoginResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: CurrentUserResponse
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+
+    def validate_strength(self) -> None:
+        if len(self.new_password) < 8:
+            raise ValueError("New password must be at least 8 characters.")
+
+
+class ChangePasswordResponse(BaseModel):
+    message: str = "Password changed successfully."

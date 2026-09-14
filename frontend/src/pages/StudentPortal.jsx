@@ -30,6 +30,32 @@ function formatDate(isoString) {
   })
 }
 
+// Excludes any in-progress draft (overall_status: 'draft', created by
+// the Registration wizard's GET-or-create-draft flow — see
+// RegistrationWizard.jsx) and sorts what's left newest-submitted-first.
+// GET /students/me/applications returns every application row
+// regardless of status, including drafts, which have no clearances yet
+// and empty/null term_code, major, etc. — the dashboard's Overview /
+// Clearances / Documents / Activity tabs all assume a "real" submitted
+// registration, so a draft must never reach them (it would show as a
+// confusing, seemingly-broken 0-of-0 registration). A draft is visible
+// to the student only from the Registration tab itself, which fetches
+// it separately via GET /registrations/current.
+//
+// Shared by StudentPortal's loadApplications (manual retry /
+// post-submission refresh) and its mount effect's own fetch, so the
+// two never drift apart. Pure/stateless, so it lives at module scope
+// rather than needing a dependency-array entry.
+function prepareApplications(applications) {
+  return applications
+    .filter((app) => app.overall_status !== 'draft')
+    .sort((a, b) => {
+      const bTime = b.submitted_at ? new Date(b.submitted_at).getTime() : 0
+      const aTime = a.submitted_at ? new Date(a.submitted_at).getTime() : 0
+      return bTime - aTime
+    })
+}
+
 // The backend only gives us an account email (no display name field),
 // so the friendly name shown in the greeting/avatar is derived from it
 // — real account data, just presented a little more warmly.
@@ -414,9 +440,10 @@ function OverviewTab({ applications, selectedApp, onSelectApp, onSwitchTab, onSe
 }
 
 /* -------------------------------------------------------
-   RegistrationTab — hosts the seven-step registration wizard
-   (POST /applications, then POST /applications/{id}/documents for
-   each staged file — see registrationAdapter.js).
+   RegistrationTab — hosts the seven-step registration wizard, backed by
+   the draft-based /registrations/* API (GET/POST /registrations,
+   PATCH .../sections/{section}, POST .../submit — see
+   RegistrationWizard.jsx and registrationAdapter.js).
 ------------------------------------------------------- */
 function RegistrationTab({ currentSession, applications, onRegistrationSubmitted, onSwitchTab }) {
   return (
@@ -562,6 +589,10 @@ function DocumentsPanel({ applicationId }) {
   const [uploadError, setUploadError]     = useState('')
   const [uploadMessage, setUploadMessage] = useState('')
 
+  // loadDocuments is reused directly after a successful upload (see
+  // handleUpload below), so it stays a standalone callback; the mount
+  // effect below calls the same endpoint through its own nested async
+  // function instead of invoking loadDocuments from the effect body.
   const loadDocuments = useCallback(() => {
     setLoading(true)
     setError('')
@@ -571,7 +602,23 @@ function DocumentsPanel({ applicationId }) {
       .finally(() => setLoading(false))
   }, [applicationId])
 
-  useEffect(() => { loadDocuments() }, [loadDocuments])
+  useEffect(() => {
+    let cancelled = false
+    async function run() {
+      setLoading(true)
+      setError('')
+      try {
+        const docs = await getApplicationDocuments(applicationId)
+        if (!cancelled) setDocuments(docs)
+      } catch (err) {
+        if (!cancelled) setError(err.message)
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+    run()
+    return () => { cancelled = true }
+  }, [applicationId])
 
   const handleUpload = async (event) => {
     event.preventDefault()
@@ -696,12 +743,19 @@ function ActivityPanel({ applicationId }) {
 
   useEffect(() => {
     let cancelled = false
-    setLoading(true)
-    setError('')
-    getApplicationActivity(applicationId)
-      .then((result) => { if (!cancelled) setActivity(result.activity) })
-      .catch((err) => { if (!cancelled) setError(err.message) })
-      .finally(() => { if (!cancelled) setLoading(false) })
+    async function run() {
+      setLoading(true)
+      setError('')
+      try {
+        const result = await getApplicationActivity(applicationId)
+        if (!cancelled) setActivity(result.activity)
+      } catch (err) {
+        if (!cancelled) setError(err.message)
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+    run()
     return () => { cancelled = true }
   }, [applicationId])
 
@@ -829,33 +883,55 @@ function StudentPortal({ onNavigate, currentSession }) {
   const [selectedClearanceId, setSelectedClearanceId] = useState(null)
 
   useEffect(() => {
-    if (isRegistrationRoute) setActiveTab('registration')
+    // Nested so the setState call isn't the effect's own first
+    // synchronous statement — same route-sync behavior as before.
+    function syncActiveTabToRoute() {
+      if (isRegistrationRoute) setActiveTab('registration')
+    }
+    syncActiveTabToRoute()
   }, [isRegistrationRoute])
 
   const isStudentSession = currentSession?.account_type === 'student'
 
+  const applySortedResult = (sorted) => {
+    setApplications(sorted)
+    setSelectedAppId((current) => current && sorted.some((app) => app.id === current)
+      ? current
+      : sorted[0]?.id ?? null)
+  }
+
+  // loadApplications is reused as a manual retry (ErrorState's onRetry)
+  // and after a successful registration submission, so it stays a
+  // standalone callback; the mount effect below calls the same endpoint
+  // through its own nested async function instead of invoking
+  // loadApplications from the effect body.
   const loadApplications = useCallback(() => {
     setLoading(true)
     setError('')
     getMyApplications()
-      .then((result) => {
-        const sorted = [...result].sort((a, b) => {
-          const bTime = b.submitted_at ? new Date(b.submitted_at).getTime() : 0
-          const aTime = a.submitted_at ? new Date(a.submitted_at).getTime() : 0
-          return bTime - aTime
-        })
-        setApplications(sorted)
-        setSelectedAppId((current) => current && sorted.some((app) => app.id === current)
-          ? current
-          : sorted[0]?.id ?? null)
-      })
+      .then((result) => applySortedResult(prepareApplications(result)))
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false))
   }, [])
 
   useEffect(() => {
-    if (isStudentSession) loadApplications()
-  }, [isStudentSession, loadApplications])
+    let cancelled = false
+    async function run() {
+      if (!isStudentSession) return
+      setLoading(true)
+      setError('')
+      try {
+        const result = await getMyApplications()
+        if (!cancelled) applySortedResult(prepareApplications(result))
+      } catch (err) {
+        if (!cancelled) setError(err.message)
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+    run()
+    return () => { cancelled = true }
+  }, [isStudentSession])
 
   const selectedApp = useMemo(
     () => applications.find((app) => app.id === selectedAppId) || null,

@@ -1,20 +1,23 @@
 /* -------------------------------------------------------
    useRegistrationDraft.js
    -----------------------
-   There is no draft-save endpoint on the backend (POST /applications
-   is create-only — see registrationAdapter.js), so this wizard cannot
-   truly save progress to the server between steps. Per the product
-   requirement we still must not lose a student's typed answers while
-   they move between steps or tabs, so the draft — everything except
-   the raw File objects, which cannot be serialized — is kept in
-   sessionStorage for the current browser tab only. It is cleared once
-   the application is submitted, or if the student logs out.
+   The backend is now the real source of truth for a registration draft
+   (GET/POST /registrations, PATCH .../sections/{section} — see
+   RegistrationWizard.jsx): every Save & Continue persists the step just
+   completed, and resuming later re-fetches and re-hydrates from there
+   (registrationAdapter.js's hydrateStateFromRegistration), which is what
+   makes "no duplicate drafts on refresh / return later, even from a
+   different device" actually true.
 
-   This is explicitly NOT a substitute for a real draft API: a page
-   reload after the browser is closed, or opening the workspace in a
-   different tab/device, will not recover the draft. That gap is
-   reported to the user at the end of this task (see the final "missing
-   API support" summary) rather than being papered over.
+   This sessionStorage layer still exists underneath that as a same-tab
+   typing buffer: whatever the student has typed into the CURRENT step
+   but not yet saved (they haven't clicked Save & Continue yet) survives
+   an accidental reload of this tab. It is cleared once the registration
+   is submitted, or if the student logs out. A raw File object still
+   can't be serialized into it, so an in-progress upload's file itself
+   does not survive a same-tab reload — see reviveWizardState below for
+   how that's surfaced honestly (an 'error' slot asking the student to
+   re-select the file) rather than silently dropped.
 ------------------------------------------------------- */
 import { useEffect, useState } from 'react'
 

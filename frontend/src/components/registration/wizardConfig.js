@@ -45,16 +45,46 @@ export function validateFileSelection(file) {
    Step metadata — short labels for the step indicator, plus the
    office each step belongs to (shown on the Review step and used to
    group the confirmation summary by office).
+
+   sectionKey is the backend's canonical section name (see backend's
+   app/schemas/registration.py SECTION_KEYS) — every step key here maps
+   1:1 to one just by swapping "-" for "_", but sectionKey is spelled
+   out explicitly so that isn't a hidden assumption baked into the code
+   that touches the API. Public Safety has no entry here on purpose —
+   it is never an online wizard step (handled entirely in person; see
+   the Public Safety instruction shown after submit).
 ------------------------------------------------------- */
 export const WIZARD_STEPS = [
-  { key: 'welcome-desk',     label: 'Welcome Desk',   office: 'Welcome Desk / Registrar' },
-  { key: 'health-services',  label: 'Health Services', office: 'Health Services' },
-  { key: 'success-center',   label: 'Success Center',  office: 'Success Center' },
-  { key: 'financial-aid',    label: 'Financial Aid',   office: 'Financial Aid' },
-  { key: 'business-office',  label: 'Business Office', office: 'Business Office / Cashier' },
-  { key: 'residence-life',   label: 'Residence Life',  office: 'Residence Life' },
-  { key: 'review',           label: 'Review & Submit', office: null },
+  { key: 'welcome-desk',     sectionKey: 'welcome_desk',    label: 'Welcome Desk',   office: 'Welcome Desk / Registrar' },
+  { key: 'health-services',  sectionKey: 'health_services', label: 'Health Services', office: 'Health Services' },
+  { key: 'success-center',   sectionKey: 'success_center',  label: 'Success Center',  office: 'Success Center' },
+  { key: 'financial-aid',    sectionKey: 'financial_aid',   label: 'Financial Aid',   office: 'Financial Aid' },
+  { key: 'business-office',  sectionKey: 'business_office', label: 'Business Office', office: 'Business Office / Cashier' },
+  { key: 'residence-life',   sectionKey: 'residence_life',  label: 'Residence Life',  office: 'Residence Life' },
+  { key: 'review',           sectionKey: 'review',          label: 'Review & Submit', office: null },
 ]
+
+// Which document_type (backend/app/services/document_service.py
+// ALLOWED_DOCUMENT_TYPES) each upload slot saves as, keyed the same way
+// updateUploadSlot's path argument is ('section.field' for nested
+// slots) — the single place that mapping lives, used both to upload a
+// newly-selected file and to match an already-uploaded document back to
+// its slot when a draft is resumed (see registrationAdapter.js).
+export const SLOT_DOCUMENT_TYPES = {
+  photoIdUpload: DOCUMENT_TYPES.PHOTO_ID,
+  immunizationUpload: DOCUMENT_TYPES.IMMUNIZATION,
+  // No dedicated backend category for a hospital/health card — filed as
+  // "other" (see final missing-API-support note). Because several slots
+  // share "other", an "other" document found on resume can't be
+  // reliably matched back to one specific slot — see
+  // registrationAdapter.js's hydrateUploadSlotsFromDocuments.
+  healthCardUpload: DOCUMENT_TYPES.OTHER,
+  transcriptUpload: DOCUMENT_TYPES.TRANSCRIPT,
+  'businessOffice.paymentProofUpload': DOCUMENT_TYPES.OTHER,
+  // Housing fee receipts share the "housing_form" category with the
+  // housing application itself — the backend has no separate receipt type.
+  'residenceLife.feeReceiptUpload': DOCUMENT_TYPES.HOUSING_FORM,
+}
 
 /* -------------------------------------------------------
    Option lists (kept local to the wizard rather than imported from
@@ -77,7 +107,12 @@ export const COURSE_OPTIONS = [
   { id: 'comm-120', code: 'COMM 120', title: 'Public Speaking',             credits: 3, schedule: 'Wed 4:00 PM'      },
 ]
 
-export const MIN_CREDIT_HOURS = 12
+// Matches backend/app/services/registration_service.py MIN_CREDIT_HOURS
+// (and application_service.create_student_application's legacy check) —
+// was out of sync with the backend (12 vs. the backend's real 15) before
+// this wiring pass; fixed so client-side validation never lets a student
+// reach Submit with a total the backend is guaranteed to reject.
+export const MIN_CREDIT_HOURS = 15
 
 export const HOUSING_STATUS_OPTIONS = [
   { value: 'on-campus', label: 'On-campus resident' },

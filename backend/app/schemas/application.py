@@ -35,9 +35,15 @@ class ApplicationResponse(BaseModel):
 
     id: UUID
     application_number: str
-    term_code: str
-    academic_year: str
-    major: str
+    # Nullable because GET /students/me/applications and GET /applications/{id}
+    # can now return a draft row (overall_status='draft', created via
+    # POST /registrations) alongside real submitted applications — a draft
+    # has none of these set until its Success Center section is saved.
+    # See app/schemas/registration.py RegistrationResponse, which has the
+    # same optionality for the same reason.
+    term_code: str | None
+    academic_year: str | None
+    major: str | None
     classification: str | None
     housing_required: bool
     overall_status: str

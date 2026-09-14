@@ -122,6 +122,22 @@ def get_initial_clearance_state(clearance_key: str, housing_required: bool) -> d
             "blocked_reason": "Residence Life is not required for commuter students.",
         }
 
+    if clearance_key == "public_safety":
+        # Public Safety is never an online step — every student must visit
+        # the office in person for ID processing, so this clearance starts
+        # (and stays) 'in_person_required' from the moment the application
+        # exists. Its availability still follows the normal locked -> ready
+        # unlock chain (see unlock_ready_clearances); only a Public Safety
+        # official can move it to 'approved' once they verify the student
+        # in person (PATCH /clearances/{id} action=approve, or the
+        # equivalent POST /official/applications/{id}/decision).
+        return {
+            "status": "in_person_required",
+            "availability": "locked",
+            "is_required": True,
+            "blocked_reason": get_initial_blocked_reason(clearance_key, housing_required),
+        }
+
     return {
         "status": "pending",
         "availability": "locked",
@@ -143,6 +159,30 @@ _STEP_PRIORITY: list[str] = [
     "residence_life",
     "public_safety",
 ]
+
+
+def build_public_safety_instruction(public_safety_clearance) -> dict | None:
+    """
+    Returns the public_safety_instruction object shown to a student after
+    submitting their registration and on every subsequent status check,
+    until a Public Safety official completes the clearance in person.
+
+    Returns None once public_safety_clearance.status == 'approved' (or any
+    other terminal state other than 'in_person_required') — the dashboard
+    stops showing the instruction at that point (Phase E requirement).
+    """
+    if public_safety_clearance is None or public_safety_clearance.status != "in_person_required":
+        return None
+    return {
+        "office": "PUBLIC_SAFETY",
+        "status": public_safety_clearance.status,
+        "title": "Visit Public Safety for your Student ID",
+        "message": (
+            "Public Safety is not completed online. Once every other office has cleared your "
+            "registration, visit the Public Safety Office in person with a valid photo ID to "
+            "complete student ID processing and finish your registration."
+        ),
+    }
 
 
 def get_role_key_for_clearance(clearance_key: str) -> str | None:

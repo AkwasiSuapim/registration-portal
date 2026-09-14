@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react'
-import { getAdminAuditLogs } from '../../services/api'
-import { getAdminDashboardSummary, isMissingEndpoint } from '../../services/adminApi'
-import { formatAction } from '../../utils/backendLabels'
+import { getAdminDashboardSummary } from '../../services/adminApi'
+import { formatAction, formatOverallStatus } from '../../utils/backendLabels'
 import { officeLabel } from './adminConstants'
-import MissingEndpointNotice from './MissingEndpointNotice'
+import StatusBadge from '../StatusBadge'
 
 function formatDateTime(isoString) {
   if (!isoString) return '—'
@@ -21,88 +20,70 @@ const SUMMARY_CARD_DEFS = [
   { key: 'pending_clearances',         label: 'Pending Clearances' },
 ]
 
-// Audit actions that indicate an application needs administrator
-// attention — a correction was requested or a clearance was rejected.
-// This is real data (every entry comes straight from GET
-// /admin/audit-logs), just reinterpreted client-side rather than
-// coming from a purpose-built "applications requiring attention"
-// endpoint — see the "requires attention" panel's own note below.
-const ATTENTION_ACTIONS = new Set(['clearance_request_correction', 'clearance_reject'])
-
 /* -------------------------------------------------------
    AdminDashboardHome — the Admin Workspace landing screen.
 
-   Two independent data sources, loaded and error-handled separately:
-     1. getAdminDashboardSummary() — MISSING backend endpoint. Powers
-        the six summary cards and registration-progress-by-office.
-     2. getAdminAuditLogs()        — real, admin-only endpoint. Powers
-        Recent Activity and (derived client-side) Applications
-        Requiring Attention.
+   Everything here comes from one real, database-backed call —
+   GET /admin/dashboard/summary — which returns the six summary counts,
+   registration progress by office, recent activity, and applications
+   requiring attention in a single response (see
+   backend/app/services/admin_service.py get_dashboard_summary).
 ------------------------------------------------------- */
 function AdminDashboardHome({ onNavigate }) {
-  const [summary, setSummary]           = useState(null)
-  const [summaryLoading, setSummaryLoading] = useState(true)
-  const [summaryMissing, setSummaryMissing] = useState(false)
-  const [summaryError, setSummaryError]     = useState('')
-
-  const [logs, setLogs]                 = useState([])
-  const [logsLoading, setLogsLoading]   = useState(true)
-  const [logsError, setLogsError]       = useState('')
-
-  // reloadToken/logsReloadToken have no meaning beyond "changed" — each
-  // Retry button bumps its token to re-run the matching effect below
-  // without a second, separately-called copy of its fetch logic.
-  const [summaryReloadToken, setSummaryReloadToken] = useState(0)
-  const [logsReloadToken, setLogsReloadToken]       = useState(0)
-  const loadSummary = () => setSummaryReloadToken((t) => t + 1)
-  const loadLogs     = () => setLogsReloadToken((t) => t + 1)
+  const [summary, setSummary]   = useState(null)
+  const [loading, setLoading]   = useState(true)
+  const [error, setError]       = useState('')
+  // reloadToken has no meaning beyond "changed" — the Retry button bumps
+  // it to re-run the effect below without a second, separately-called
+  // copy of the fetch logic.
+  const [reloadToken, setReloadToken] = useState(0)
+  const reload = () => setReloadToken((t) => t + 1)
 
   useEffect(() => {
     let cancelled = false
     async function run() {
-      setSummaryLoading(true)
-      setSummaryMissing(false)
-      setSummaryError('')
+      setLoading(true)
+      setError('')
       try {
         const result = await getAdminDashboardSummary()
         if (!cancelled) setSummary(result)
       } catch (err) {
-        if (cancelled) return
-        if (isMissingEndpoint(err)) setSummaryMissing(true)
-        else setSummaryError(err.message)
+        if (!cancelled) setError(err.message)
       } finally {
-        if (!cancelled) setSummaryLoading(false)
+        if (!cancelled) setLoading(false)
       }
     }
     run()
     return () => { cancelled = true }
-  }, [summaryReloadToken])
+  }, [reloadToken])
 
-  useEffect(() => {
-    let cancelled = false
-    async function run() {
-      setLogsLoading(true)
-      setLogsError('')
-      try {
-        const result = await getAdminAuditLogs({ limit: 50 })
-        if (!cancelled) setLogs(result)
-      } catch (err) {
-        if (!cancelled) setLogsError(err.message)
-      } finally {
-        if (!cancelled) setLogsLoading(false)
-      }
-    }
-    run()
-    return () => { cancelled = true }
-  }, [logsReloadToken])
-
-  const recentActivity = logs.slice(0, 8)
-  const attentionMap = new Map()
-  for (const log of logs) {
-    if (!log.application_id || !ATTENTION_ACTIONS.has(log.action) || !log.success) continue
-    if (!attentionMap.has(log.application_id)) attentionMap.set(log.application_id, log)
+  if (loading) {
+    return (
+      <div className="workspace-panel">
+        <p className="app-detail__empty">Loading dashboard…</p>
+      </div>
+    )
   }
-  const attentionItems = Array.from(attentionMap.values()).slice(0, 8)
+
+  if (error) {
+    return (
+      <div className="workspace-panel">
+        <div className="workspace-error" role="alert">
+          <span className="workspace-error__icon" aria-hidden="true">!</span>
+          <div className="workspace-error__body">
+            <span className="workspace-error__title">Could not load the dashboard</span>
+            <p className="workspace-error__text">{error}</p>
+            <div className="workspace-error__actions">
+              <button type="button" className="btn btn--outline" onClick={reload}>Try again</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const recentActivity = summary.recent_activity || []
+  const attentionItems = summary.applications_requiring_attention || []
 
   return (
     <div className="workspace-panel">
@@ -110,43 +91,20 @@ function AdminDashboardHome({ onNavigate }) {
       {/* Summary cards */}
       <section className="workspace-card" aria-labelledby="admin-summary-h">
         <h2 id="admin-summary-h" className="workspace-card__title">Overview</h2>
-        {summaryLoading ? (
-          <p className="app-detail__empty">Loading dashboard summary…</p>
-        ) : summaryMissing ? (
-          <MissingEndpointNotice endpoint="GET /admin/dashboard/summary" onRetry={loadSummary} />
-        ) : summaryError ? (
-          <div className="workspace-error" role="alert">
-            <span className="workspace-error__icon" aria-hidden="true">!</span>
-            <div className="workspace-error__body">
-              <span className="workspace-error__title">Could not load the dashboard summary</span>
-              <p className="workspace-error__text">{summaryError}</p>
-              <div className="workspace-error__actions">
-                <button type="button" className="btn btn--outline" onClick={loadSummary}>Try again</button>
-              </div>
+        <div className="admin-summary-grid">
+          {SUMMARY_CARD_DEFS.map((def) => (
+            <div key={def.key} className="admin-summary-card">
+              <span className="admin-summary-card__value">{summary[def.key] ?? '—'}</span>
+              <span className="admin-summary-card__label">{def.label}</span>
             </div>
-          </div>
-        ) : (
-          <div className="admin-summary-grid">
-            {SUMMARY_CARD_DEFS.map((def) => (
-              <div key={def.key} className="admin-summary-card">
-                <span className="admin-summary-card__value">{summary?.[def.key] ?? '—'}</span>
-                <span className="admin-summary-card__label">{def.label}</span>
-              </div>
-            ))}
-          </div>
-        )}
+          ))}
+        </div>
       </section>
 
       {/* Registration progress by office */}
       <section className="workspace-card" aria-labelledby="admin-progress-h">
         <h2 id="admin-progress-h" className="workspace-card__title">Registration Progress by Office</h2>
-        {summaryLoading ? (
-          <p className="app-detail__empty">Loading…</p>
-        ) : summaryMissing ? (
-          <MissingEndpointNotice endpoint="GET /admin/dashboard/summary" onRetry={loadSummary} />
-        ) : summaryError ? (
-          <p className="app-detail__empty">Could not load this section.</p>
-        ) : !summary?.registration_progress_by_office?.length ? (
+        {!summary.registration_progress_by_office?.length ? (
           <p className="app-detail__empty">No registration activity recorded yet.</p>
         ) : (
           <div className="admin-office-progress-list">
@@ -156,7 +114,7 @@ function AdminDashboardHome({ onNavigate }) {
               return (
                 <div key={row.role_key} className="admin-office-progress">
                   <div className="admin-office-progress__head">
-                    <span>{row.role_name || officeLabel(row.role_key)}</span>
+                    <span>{row.role_name || officeLabel(row.office)}</span>
                     <span className="admin-office-progress__meta">{row.completed}/{total} completed</span>
                   </div>
                   <div className="workspace-progress-bar">
@@ -176,20 +134,7 @@ function AdminDashboardHome({ onNavigate }) {
           <p className="workspace-card__subtitle">
             The most recent logged application/clearance events across every office.
           </p>
-          {logsLoading ? (
-            <p className="app-detail__empty">Loading activity…</p>
-          ) : logsError ? (
-            <div className="workspace-error" role="alert">
-              <span className="workspace-error__icon" aria-hidden="true">!</span>
-              <div className="workspace-error__body">
-                <span className="workspace-error__title">Could not load recent activity</span>
-                <p className="workspace-error__text">{logsError}</p>
-                <div className="workspace-error__actions">
-                  <button type="button" className="btn btn--outline" onClick={loadLogs}>Try again</button>
-                </div>
-              </div>
-            </div>
-          ) : recentActivity.length === 0 ? (
+          {recentActivity.length === 0 ? (
             <p className="app-detail__empty">No activity recorded yet.</p>
           ) : (
             <ul className="admin-activity-list">
@@ -204,7 +149,8 @@ function AdminDashboardHome({ onNavigate }) {
                       <span className="admin-activity-row__main">
                         <span className="admin-activity-row__action">{formatAction(log.action)}</span>
                         <span className="admin-activity-row__meta">
-                          {log.success ? 'Succeeded' : 'Did not succeed'} · View student record
+                          {log.student_name ? `${log.student_name} · ` : ''}
+                          {log.success ? 'Succeeded' : 'Did not succeed'}
                         </span>
                       </span>
                       <span className="admin-activity-row__time">{formatDateTime(log.occurred_at)}</span>
@@ -227,30 +173,26 @@ function AdminDashboardHome({ onNavigate }) {
         <section className="workspace-card" aria-labelledby="admin-attention-h">
           <h2 id="admin-attention-h" className="workspace-card__title">Applications Requiring Attention</h2>
           <p className="workspace-card__subtitle">
-            Derived from the last 50 logged audit events where an office requested a correction or
-            rejected a clearance. A dedicated endpoint would give a complete, paginated list instead
-            of this recent-activity sample — see the implementation report.
+            Applications currently rejected or awaiting a student correction.
           </p>
-          {logsLoading ? (
-            <p className="app-detail__empty">Loading…</p>
-          ) : logsError ? (
-            <p className="app-detail__empty">Could not load this section.</p>
-          ) : attentionItems.length === 0 ? (
-            <p className="app-detail__empty">Nothing flagged in recent activity.</p>
+          {attentionItems.length === 0 ? (
+            <p className="app-detail__empty">Nothing requires attention right now.</p>
           ) : (
             <ul className="admin-activity-list">
-              {attentionItems.map((log) => (
-                <li key={log.id}>
+              {attentionItems.map((item) => (
+                <li key={item.application_id}>
                   <button
                     type="button"
                     className="admin-activity-row admin-activity-row--link"
-                    onClick={() => onNavigate(`/admin/records/${log.application_id}`)}
+                    onClick={() => onNavigate(`/admin/records/${item.application_id}`)}
                   >
                     <span className="admin-activity-row__main">
-                      <span className="admin-activity-row__action">{formatAction(log.action)}</span>
-                      <span className="admin-activity-row__meta">View student record</span>
+                      <span className="admin-activity-row__action">{item.student_name}</span>
+                      <span className="admin-activity-row__meta">
+                        {item.application_number} · <StatusBadge status={formatOverallStatus(item.overall_status)} />
+                      </span>
                     </span>
-                    <span className="admin-activity-row__time">{formatDateTime(log.occurred_at)}</span>
+                    <span className="admin-activity-row__time">{formatDateTime(item.updated_at)}</span>
                   </button>
                 </li>
               ))}

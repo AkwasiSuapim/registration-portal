@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { marked } from 'marked'
 
 const INITIAL_MARKDOWN = `# Project Todo List

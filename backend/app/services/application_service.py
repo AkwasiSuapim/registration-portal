@@ -108,6 +108,10 @@ def create_student_application(
         housing_required=application_data.housing_required,
         overall_status="in_progress",
         current_step="registrar_check_in",
+        # submitted_at has no DB server_default (see the model's
+        # docstring) — this one-shot creation path submits immediately,
+        # unlike POST /registrations' draft, so it's set explicitly here.
+        submitted_at=datetime.now(timezone.utc),
     )
     db.add(application)
     db.flush()  # Populate application.id before creating related rows.
