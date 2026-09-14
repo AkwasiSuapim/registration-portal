@@ -89,7 +89,7 @@ function extractErrorMessage(data, status) {
   return fallbacks[status] || 'Something went wrong. Please try again.'
 }
 
-function buildQueryString(params) {
+export function buildQueryString(params) {
   if (!params) return ''
   const entries = Object.entries(params).filter(
     ([, value]) => value !== undefined && value !== null && value !== ''
@@ -102,8 +102,13 @@ function buildQueryString(params) {
 
 /* -------------------------------------------------------
    Core request helper — used by every JSON endpoint
+
+   Exported (alongside buildQueryString) so other service files, such
+   as services/adminApi.js, can build additional endpoint functions on
+   top of the same base URL / auth header / error handling instead of
+   duplicating fetch() plumbing.
 ------------------------------------------------------- */
-async function request(path, { method = 'GET', body, auth = true } = {}) {
+export async function request(path, { method = 'GET', body, auth = true } = {}) {
   const headers = { 'Content-Type': 'application/json' }
   const token = auth ? getToken() : null
   if (token) headers['Authorization'] = `Bearer ${token}`

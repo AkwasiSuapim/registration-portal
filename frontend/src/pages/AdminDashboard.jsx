@@ -6,6 +6,7 @@ import OfficialDashboardTab from '../components/official/OfficialDashboardTab'
 import ReviewHistoryTab from '../components/official/ReviewHistoryTab'
 import ApplicationReviewPanel from '../components/official/ApplicationReviewPanel'
 import { deriveOfficialDisplayName } from '../components/official/officialStatus'
+import AdminWorkspace from './AdminWorkspace'
 import '../components/official/officialWorkspace.css'
 
 const OFFICIAL_TABS = [
@@ -92,27 +93,12 @@ function AdminDashboard({ onNavigate, currentSession }) {
   // Brief loading gate — App.jsx already guards this route.
   if (!officeRole) return null
 
+  // system_admin accounts get the full Admin Workspace (dashboard, user
+  // management, office assignments, student records) instead of an
+  // office queue — admins have no clearance key of their own (see
+  // loadQueue above), so there is nothing for them to review here.
   if (isAdmin) {
-    return (
-      <div className="workspace">
-        <div className="workspace-shell">
-          <main className="workspace-main">
-            <div className="workspace-panel">
-              <h1 className="workspace-hero__title">Admin Dashboard</h1>
-              <div className="workspace-empty">
-                <h3 className="workspace-empty__title">System Admin accounts don't have an office queue</h3>
-                <p className="workspace-empty__text">
-                  Office staff review applications directly from their own Official Workspace.
-                </p>
-                <button type="button" className="btn btn--outline" onClick={() => onNavigate('/')}>
-                  Back to Home
-                </button>
-              </div>
-            </div>
-          </main>
-        </div>
-      </div>
-    )
+    return <AdminWorkspace onNavigate={onNavigate} currentSession={currentSession} />
   }
 
   return (

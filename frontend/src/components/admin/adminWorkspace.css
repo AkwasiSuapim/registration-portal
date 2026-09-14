@@ -1,0 +1,543 @@
+/* -------------------------------------------------------
+   adminWorkspace.css
+   -----------------------
+   Styles for the Admin Workspace. Extends the shared portal visual
+   system the same way officialWorkspace.css does: workspace-shell /
+   workspace-sidebar / workspace-card / workspace-panel / btn /
+   status-badge / form-field / form-grid / applications-table (all
+   already defined in App.css) are reused as-is. This file only adds
+   the handful of classes those shared ones don't already cover.
+------------------------------------------------------- */
+
+/* Account-status badge colors — same technique as App.css's existing
+   status-badge--* rules and officialWorkspace.css's own additions
+   (StatusBadge derives the class from the label): Active/Inactive are
+   new labels this workspace introduces for users.is_active. */
+.status-badge--active   { color: #166534; background: #f0fdf4; border: 1px solid #bbf7d0; }
+.status-badge--inactive { color: #5D6870; background: #F1F3F4; border: 1px solid #d3dee2; }
+
+/* ─── Missing-endpoint notice ───────────────────────────── */
+
+.admin-missing {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 18px;
+  background: #F6F9FA;
+  border: 1px dashed #B9C6CB;
+  border-radius: 12px;
+}
+
+.admin-missing__icon {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #DCEAF0;
+  color: #2F5A6B;
+  font-size: 13px;
+  font-weight: 800;
+  font-style: italic;
+}
+
+.admin-missing__body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.admin-missing__title {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #15191C;
+}
+
+.admin-missing__text {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #5D6870;
+}
+
+.admin-missing__text code {
+  background: #E7ECEE;
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 12px;
+  color: #2F5A6B;
+}
+
+/* ─── Dashboard summary cards ───────────────────────────── */
+
+.admin-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.admin-summary-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px 16px;
+  background: #FFFFFF;
+  border: 1px solid #d3dee2;
+  border-radius: 14px;
+}
+
+.admin-summary-card__value {
+  font-size: 24px;
+  font-weight: 800;
+  color: #15191C;
+}
+
+.admin-summary-card__value--unavailable {
+  color: #B9C6CB;
+}
+
+.admin-summary-card__label {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #5D6870;
+}
+
+@media (max-width: 1024px) {
+  .admin-summary-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) {
+  .admin-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* ─── Dashboard shortcuts ───────────────────────────────── */
+
+.admin-shortcut-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+.admin-shortcut {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 14px 16px;
+  background: #F8FAFB;
+  border: 1px solid #E7ECEE;
+  border-radius: 12px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.admin-shortcut:hover {
+  border-color: #8CB0BF;
+  background: #DCEAF0;
+}
+
+.admin-shortcut__label {
+  font-size: 14px;
+  font-weight: 700;
+  color: #15191C;
+}
+
+.admin-shortcut__desc {
+  font-size: 12.5px;
+  color: #5D6870;
+}
+
+/* ─── Office progress bars ──────────────────────────────── */
+
+.admin-office-progress-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.admin-office-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.admin-office-progress__head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 700;
+  color: #15191C;
+}
+
+.admin-office-progress__meta {
+  font-size: 12px;
+  font-weight: 500;
+  color: #5D6870;
+}
+
+/* ─── Two-column layout (Recent Activity / Requiring Attention) ── */
+
+.admin-two-col {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+/* ─── Activity / attention lists ────────────────────────── */
+
+.admin-activity-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.admin-activity-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid #E7ECEE;
+  border-radius: 10px;
+  background: #F8FAFB;
+}
+
+.admin-activity-row--link {
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  border: 1px solid #E7ECEE;
+}
+
+.admin-activity-row--link:hover {
+  border-color: #8CB0BF;
+  background: #DCEAF0;
+}
+
+.admin-activity-row__main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.admin-activity-row__action {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #15191C;
+}
+
+.admin-activity-row__meta {
+  font-size: 12px;
+  color: #5D6870;
+}
+
+.admin-activity-row__time {
+  flex: none;
+  font-size: 12px;
+  color: #5D6870;
+}
+
+/* ─── Search & filters ──────────────────────────────────── */
+
+.admin-filters {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.admin-filters__search {
+  flex: 1 1 240px;
+  display: flex;
+  gap: 8px;
+}
+
+.admin-filters__search input {
+  flex: 1;
+  min-height: 42px;
+  border: 1px solid #d3dee2;
+  border-radius: 8px;
+  padding: 0 14px;
+  font-size: 14px;
+  color: #15191C;
+  background: #FFFFFF;
+}
+
+.admin-filters__search input:focus-visible {
+  outline: 2px solid #2F5A6B;
+  outline-offset: 1px;
+  border-color: #2F5A6B;
+}
+
+.admin-filters__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #3A464D;
+}
+
+.admin-filters__field select {
+  min-height: 42px;
+  border: 1px solid #d3dee2;
+  border-radius: 8px;
+  padding: 0 10px;
+  font-size: 13.5px;
+  background: #FFFFFF;
+  color: #15191C;
+}
+
+.admin-filters__field select:focus-visible,
+.admin-filters__search input:focus-visible {
+  outline: 2px solid #2F5A6B;
+  outline-offset: 1px;
+}
+
+.admin-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.admin-toolbar__actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ─── User directory table ──────────────────────────────── */
+
+.admin-table-scroll {
+  overflow-x: auto;
+}
+
+.admin-cell-name {
+  font-weight: 700;
+  color: #15191C;
+}
+
+.admin-cell-sub {
+  display: block;
+  font-size: 12px;
+  color: #5D6870;
+}
+
+.admin-row-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* ─── Pagination ─────────────────────────────────────────── */
+
+.admin-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.admin-pagination__info {
+  font-size: 12.5px;
+  color: #5D6870;
+}
+
+.admin-pagination__controls {
+  display: flex;
+  gap: 8px;
+}
+
+/* ─── Cards for mobile table fallback (responsive) ──────── */
+
+.admin-user-cards {
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+}
+
+@media (max-width: 760px) {
+  .admin-table-scroll { display: none; }
+  .admin-user-cards { display: flex; }
+}
+
+.admin-user-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px;
+  background: #FFFFFF;
+  border: 1px solid #d3dee2;
+  border-radius: 14px;
+}
+
+.admin-user-card__top {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.admin-user-card__meta {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  font-size: 12.5px;
+}
+
+.admin-user-card__meta dt {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #8A959B;
+}
+
+.admin-user-card__meta dd {
+  margin: 0;
+  color: #15191C;
+}
+
+/* ─── Forms (Add/Edit Student, Add/Edit Official) ───────── */
+
+.admin-form-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.admin-form-note {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: #5D6870;
+  background: #F6F9FA;
+  border: 1px solid #E7ECEE;
+  border-radius: 10px;
+  padding: 10px 14px;
+}
+
+.admin-field-error {
+  margin: 4px 0 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: #9a3412;
+}
+
+.admin-radio-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 8px;
+}
+
+.admin-radio-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid #d3dee2;
+  border-radius: 10px;
+  font-size: 13.5px;
+  color: #15191C;
+  cursor: pointer;
+}
+
+.admin-radio-option:has(input:checked) {
+  border-color: #2F5A6B;
+  background: #DCEAF0;
+}
+
+.admin-radio-option input:focus-visible {
+  outline: 2px solid #2F5A6B;
+  outline-offset: 2px;
+}
+
+/* ─── Office assignments ────────────────────────────────── */
+
+.admin-office-assign-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+.admin-office-assign-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 18px;
+  background: #FFFFFF;
+  border: 1px solid #d3dee2;
+  border-radius: 14px;
+}
+
+.admin-office-assign-card__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.admin-office-assign-card__name {
+  font-size: 15px;
+  font-weight: 800;
+  color: #15191C;
+}
+
+.admin-office-assign-card__count {
+  font-size: 12px;
+  font-weight: 700;
+  color: #5D6870;
+}
+
+.admin-official-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid #E7ECEE;
+  border-radius: 8px;
+  background: #F8FAFB;
+}
+
+.admin-official-row__name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #15191C;
+}
+
+.admin-official-row__email {
+  display: block;
+  font-size: 11.5px;
+  color: #5D6870;
+}
+
+/* ─── Record page account info ──────────────────────────── */
+
+.admin-record-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.admin-record-breadcrumb {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #2F5A6B;
+  cursor: pointer;
+  text-align: left;
+  width: fit-content;
+}
+
+.admin-record-breadcrumb:hover { text-decoration: underline; }

@@ -7,7 +7,7 @@ import Login from './pages/Login'
 import AdminDashboard from './pages/AdminDashboard'
 import StudentPortal from './pages/StudentPortal'
 import { getToken, getCurrentUser, logout } from './services/api'
-import { STUDENT_REGISTRATION_PATH } from './utils/routes'
+import { STUDENT_PORTAL_PATH, STUDENT_REGISTRATION_PATH } from './utils/routes'
 import './App.css'
 import './components/siteChrome.css'
 
@@ -163,13 +163,29 @@ function App() {
         />
 
         <Route
-          path="/admin"
+          path="/admin/*"
           element={
             // Backend-authorized access control — account_type comes from
             // GET /auth/me / the login response, never from a frontend choice.
-            !currentSession || !['official', 'admin'].includes(currentSession.account_type) ? (
+            // "/admin/*" (rather than just "/admin") so the Admin Workspace's
+            // own nested routes (user management, add/edit forms, student
+            // records, office assignments — see pages/AdminWorkspace.jsx)
+            // are real, deep-linkable URLs while staying behind this same
+            // guard; officials, who only ever link to "/admin" itself, are
+            // unaffected. Signed-in students get a distinct Unauthorized
+            // message with a way back to their own dashboard, rather than
+            // the generic "please log in" copy meant for signed-out visitors.
+            !currentSession ? (
               <AccessRequired
                 message="Please log in as an official or registrar staff member to access the Admin Dashboard."
+                onNavigate={onNavigate}
+              />
+            ) : currentSession.account_type === 'student' ? (
+              <AccessRequired
+                title="Unauthorized"
+                message="The Admin Dashboard is only available to official and administrator accounts. Head to your own dashboard instead."
+                actionLabel="Go to My Dashboard"
+                actionPath={STUDENT_PORTAL_PATH}
                 onNavigate={onNavigate}
               />
             ) : (
